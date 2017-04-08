@@ -2,52 +2,60 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Excel;
+class ExcelController extends Controller
+{
+    public $flag = true;
+    /*
+     * 导入数据
+     * */
+    public function import(Request $request,$campus,$gym){
+        //验证用户 token
+        if(!$this->check_token($request->input('api_token')))
+        {
+            return $this->stdResponse(-3);
+        }
+        if($this->user_campus != $campus){
+            return $this->stdResponse("-6");
+        }
+        //获取文件
+        $excel = $request->file("excel");
+        $rules = array(
+            'excel' => 'required|mimes:xlsx,xls|max:20000'
+        );
+        $validator = \Validator::make(array('excel'=> $excel), $rules);
 
-//include '/PHPExcel/IOFactory.php';
-use IOFactory;
+        if(!$validator->passes())
+        {
+            return $this->stdresponse("-1");
+        }
+        $path = public_path()."/schedules";
+        $filename = uniqid().$excel->getClientOriginalExtension();
 
-class ExcelController{
+        if(!$excel->move($path,$filename)){
+            return $this->sedresponse("-8");
+        }
 
-    private $basePath = "schedules/";
-    private $inputFileType = 'Excel2007';
-    private $sheetname = 'Data Sheet #1';
-
-    public function getContent($filename){
-        $input = array();
-        $inputFileName = $this->basePath.$filename;
-
-        /**  Create a new Reader of the type defined in $inputFileType  **/
-        $objReader = IOFactory::createReader($this->inputFileType);
-        /**  Define how many rows we want to read for each "chunk"  **/
-        $chunkSize = 20;
-        /**  Create a new Instance of our Read Filter  **/
-
-        /**  Loop to read our worksheet in "chunk size" blocks  **/
-        $objPHPExcel = $objReader->load($inputFileName);
-        //	Do some processing here
-        $objWorksheet = $objPHPExcel->getActiveSheet();
-        foreach($objWorksheet->getRowIterator() as $row){
-            $cellIterator = $row->getCellIterator();
-            $cellIterator->setIterateOnlyExistingCells(false);
-
-            $row = array();
-            foreach($cellIterator as $cell){
-                if($cell->getValue() != "date"){
-                    if($cell->getColumn() == "A"){
-                        $row[change($cell->getColumn())] = date("Y-m-d",PHPExcel_Shared_Date::ExcelToPHP($cell->getValue()));
-                    }else{
-                        $row[change($cell->getColumn())] = $cell->getValue();
-                    }
-                }else{
-                    break;
+        $filePath = "public/schedules/".$filename;
+        Excel::load($filePath,function ($reader){
+            $reader->formatDates(true, 'Y-m-d');
+            $reader = $reader->getSheet(0);
+            $data = $reader->toArray();
+            $key = array_shift($data);
+            foreach ($data as $row){
+                $row = array_combine($key,$row);
+                $res = DB::table('schedules')->insert($row);
+                if(!$res){
+                   $this->flag = false;
                 }
             }
-            if(!empty($row)){
-                array_push($input,$row);
-            }
+        },'UTF-8');
+
+        if($this->flag){
+            return $this->stdresponse("1");
         }
-        return $input;
-        /*var_dump($input);
-        var_dump(count($input));*/
+        return $this->stdresponse("-4");
     }
 }

@@ -60,7 +60,7 @@ Route::group(['prefix' => '/api/users'],function (){
 /*场馆日常管理表格 以/api/schedules 开头*/
 Route::group(['prefix' => '/api/schedules/campus/{campus}/gym/{gym}'],function (){
     Route::get('/','ApplicationController@showData'); /*根据 日期获取 校区场馆的使用情况*/
-    Route::post('/','ApplicationController@logData'); /*录入数据*/
+    Route::post('/','ExcelController@import'); /*录入数据*/
     Route::put('/','ApplicationController@setData'); /*修改 场馆的使用情况*/
 });
 

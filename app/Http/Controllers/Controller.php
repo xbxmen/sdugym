@@ -23,7 +23,8 @@ class Controller extends BaseController
         -4 => '数据库操作失败',
         -5 => '记录不存在',
         -6 => '权限不足',
-        -7 => '用户名或密码错误'
+        -7 => '用户名或密码错误',
+        -8 => '文件上传失败'
     ];
 
     public $filterFail = false;

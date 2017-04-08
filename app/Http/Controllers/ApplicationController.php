@@ -9,13 +9,12 @@
 namespace App\Http\Controllers;
 
 
-
 use Illuminate\Http\Request;
 
 class ApplicationController extends Controller
 {
     //显示 校区场馆的安排情况
-    public function show(Request $request,$campus,$gym){
+    public function showData(Request $request,$campus,$gym){
 
     }
 
@@ -23,7 +22,7 @@ class ApplicationController extends Controller
     public function logData(Request $request,$campus,$gym){
         $excelReader = new ExcelController();
 
-        return $excelReader->getContent("qwe.xlsx");
+        return $excelReader->import("qwe.xlsx");
     }
 
     //
