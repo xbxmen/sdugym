@@ -59,17 +59,56 @@ Route::group(['prefix' => '/api/users'],function (){
 
 /*场馆日常管理表格 以/api/schedules 开头*/
 Route::group(['prefix' => '/api/schedules/campus/{campus}/gym/{gym}'],function (){
-    Route::get('/','ApplicationController@showData'); /*根据 日期获取 校区场馆的使用情况*/
+    Route::get('/','ScheduleController@showData'); /*根据 日期获取 校区场馆的使用情况*/
     Route::post('/','ExcelController@import'); /*录入数据*/
-    Route::put('/','ApplicationController@setData'); /*修改 场馆的使用情况*/
+    Route::put('/','ScheduleController@updateData'); /*修改 场馆的使用情况*/
 });
 
-
-/*场馆申请表格 申请*/
-
-
+/*场馆申请表格 校内 申请  */
+Route::group(['prefix'=>'/api/apply'],function(){
+	Route::post('/','ApplicationController@doApply');/*提交场馆申请*/
+	Route::get('/campus/{campus}/gym/{gym}','ApplicationController@showApply');/*show application for adminitor */
+	Route::put('/{id}','ApplicationController@checkApply');/*adminitor submit state of application-checked */
+	Route::delete('/{id}','ApplicationController@deApply');/*adminitor delete application form*/
+});
+/* 场馆申请表格 训练班 申请 */
+Route::group(['prefix'=>'/api/apply/train'],function(){
+	Route::post('/','ApplicationController@trainDoApply');/*提交场馆申请*/
+	Route::get('/campus/{campus}/gym/{gym}','ApplicationController@trainShowApply');/*show train-application for adminitor */
+	Route::put('/{id}','ApplicationController@trainCheckApply');/*adminitor submit state of train-application-checked */
+	Route::delete('/{id}','ApplicationController@trainDeApply');/*adminitor delete train-application-form*/
+});
+/*留言板接口 */
+Route::group(['prefix'=>'/api/messages'],function(){
+	Route::post('/','MessageController@addMessages');
+	Route::get('/type/{type}','MessageController@showMessages');
+	Route::get('/id/{id}','MessageController@getContactInfo');
+    Route::delete('/{id}','MessageController@deMessage');
+});
 /*文件管理接口*/
 Route::group(['prefix' => '/api/documents/'],function (){
 
     Route::post('/','DocumentController@upload');
+});
+Route::group(['prefix'=>'/api/equipments'],function(){
+	Route::post('/','EquipmentController@postRegistry');
+	Route::get('/campus/{campus}','EquipmentController@getRegistry');
+	Route::delete('/id/{id}','EquipmentController@deRegistry');
+});
+
+Route::group(['prefix'=>'/api/equipments/adjust'],function(){
+	Route::post('/','EquipmentController@postAdjust');
+	Route::get('/campus/{campus}','EquipmentController@getAdjust');
+	Route::delete('/id/{id}','EquipmentController@deAdjust');
+});
+
+Route::group(['prefix'=>'/api/news'],function(){
+	Route::post('/content','NewsController@editNews');
+	Route::post('/picture','NewsController@uploadImg');
+	Route::get('/list','NewsController@getNewsList');
+	Route::get('/content/id/{id}','NewsController@getNewsContent');
+	Route::put('/id/{id}','NewsController@checkNews');
+	Route::delete('/id/{id}','NewsController@deNews');
+	Route::delete('/picture/id/{id}','NewsController@deImg');
+	Route::get('/picture/path/{path}','NewsController@getImg');
 });

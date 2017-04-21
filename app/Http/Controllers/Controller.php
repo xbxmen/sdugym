@@ -24,7 +24,9 @@ class Controller extends BaseController
         -5 => '记录不存在',
         -6 => '权限不足',
         -7 => '用户名或密码错误',
-        -8 => '文件上传失败'
+        -8 => '文件上传失败',
+        -9 => '申请场馆失败',
+        -10=> '存在时间冲突'
     ];
 
     public $filterFail = false;

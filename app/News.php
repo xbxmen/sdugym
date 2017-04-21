@@ -9,13 +9,13 @@ namespace App;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Application extends Model
+class News extends Model
 {
-    protected $table = "applications";
+    protected $table = "news";
 
-    protected $primaryKey = "id";
+    protected $primaryKey = "n_id";
 
-    protected $fillable = ['campus','gym','time','classtime','major','content','pnumber','charger','tel','cost','remark'];
+    protected $fillable = ['title','time','article','writer','video','link','state','u_id'];
 
     /**
      * The attributes excluded from the model's JSON form.

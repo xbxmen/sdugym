@@ -35,21 +35,26 @@ class ExcelController extends Controller
         $filename = uniqid().$excel->getClientOriginalExtension();
 
         if(!$excel->move($path,$filename)){
-            return $this->sedresponse("-8");
+            return $this->stdResponse("-8");
         }
 
         $filePath = "public/schedules/".$filename;
         Excel::load($filePath,function ($reader){
-            $reader->formatDates(true, 'Y-m-d');
             $reader = $reader->getSheet(0);
             $data = $reader->toArray();
             $key = array_shift($data);
             foreach ($data as $row){
+                $arrTime = explode("-",$row[0]);
+                $row[0] = date("Y-m-d",mktime(0,0,0,$arrTime[0],$arrTime[1],$arrTime[2]));
                 $row = array_combine($key,$row);
-                $res = DB::table('schedules')->insert($row);
-                if(!$res){
-                   $this->flag = false;
+                DB::beginTranSacTion();
+                try{
+                    DB::table('schedules')->insert($row);
+                    DB::commit();
+                }catch (\Exception $e){
+                    $this->flag = false;
                 }
+
             }
         },'UTF-8');
 

@@ -2,20 +2,20 @@
 /**
  * Created by HBUILDER.
  * User: hefan
- * Date: 17-04-10
- * Time: 10:36
+ * Date: 17-04-15
+ * Time: 14:36
  */
 namespace App;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Application extends Model
+class Equipment extends Model
 {
-    protected $table = "applications";
+    protected $table = "equipments";
 
     protected $primaryKey = "id";
 
-    protected $fillable = ['campus','gym','time','classtime','major','content','pnumber','charger','tel','cost','remark'];
+    protected $fillable = ['campus','gym','equipment_name','buy_date','buy_number','in_number','no_number','use_campus','use_number','price','remark'];
 
     /**
      * The attributes excluded from the model's JSON form.

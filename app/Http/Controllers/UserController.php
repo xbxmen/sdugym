@@ -47,15 +47,15 @@ class UserController extends Controller
             return $this->stdResponse(-3);
         }
         /*创建用户*/
-        if($this->user_grade < $request->input('grade'))
+        if($this->user_grade != $request->input('campus'))
         {
             $user = new User();
             $user->schoolnum = $request->input('schoolnum');
             $user->password = md5($request->input('password')."#".$request->input('schoolnum'));
-            $user->grade = $request->input('grade');
+            $user->grade = ++$this->user_grade;
             $user->campus = $request->input('campus');
             $user->realname = $request->input('realname');
-            $user->save();
+            $user->save();	
             return $this->stdResponse(1);
         }
         return $this->stdResponse("-6");

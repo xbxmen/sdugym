@@ -61,6 +61,12 @@ return [
             'region' => 'your-region',
             'bucket' => 'your-bucket',
         ],
+        
+        'pic'=>[
+            'driver'=>'local',
+            'root'=>storage_path('public/newspic'),
+            'visibility'=>'public',
+        ],
 
     ],
 
