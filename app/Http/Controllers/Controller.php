@@ -35,7 +35,8 @@ class Controller extends BaseController
     public $user_grade = "";
     public $user_permission = "";
     public $user_campus = "";
-
+    
+    
     public function stdResponse($code='',$result='')
     {
         $hashCode = ($code || $code === 1);

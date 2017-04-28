@@ -50,7 +50,7 @@ return [
 
         'public' => [
             'driver' => 'local',
-            'root' => storage_path('app/public'),
+            'root' => storage_path('app/public/schedules'),
             'visibility' => 'public',
         ],
 
@@ -66,6 +66,11 @@ return [
             'driver'=>'local',
             'root'=>storage_path('public/newspic'),
             'visibility'=>'public',
+        ],
+        'doc'=>[
+        	'driver'=>'local',
+        	'root'=>storage_path('public/documents'),
+        	'visibility'=>'public',
         ],
 
     ],

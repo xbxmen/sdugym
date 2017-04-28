@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Excel;
+use Storage;
+
 class ExcelController extends Controller
 {
     public $flag = true;
@@ -31,14 +33,16 @@ class ExcelController extends Controller
         {
             return $this->stdresponse("-1");
         }
-        $path = public_path()."/schedules";
-        $filename = uniqid().$excel->getClientOriginalExtension();
-
-        if(!$excel->move($path,$filename)){
+       // $path = public_path()."/schedules";
+        $filename = uniqid().'.'.$excel->getClientOriginalExtension();
+        $realpath=$excel->getRealPath();
+           
+        $bool =Storage::put($filename,file_get_contents($realpath));
+        if(!$bool){
             return $this->stdResponse("-8");
         }
 
-        $filePath = "public/schedules/".$filename;
+        $filePath = "storage/public/schedules/".$filename;
         Excel::load($filePath,function ($reader){
             $reader = $reader->getSheet(0);
             $data = $reader->toArray();
@@ -59,6 +63,8 @@ class ExcelController extends Controller
         },'UTF-8');
 
         if($this->flag){
+        	/*delete  upload file*/
+        	Storage::delete($filename);
             return $this->stdresponse("1");
         }
         return $this->stdresponse("-4");
