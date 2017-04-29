@@ -16,19 +16,23 @@ class FinanceController extends Controller{
 
 
    public function addFinance(Request $request){
-     	
-     	if(!($this->check_token($request->api_token)&&$this->user_permission==2))
+
+       $res=$this->filter($request,[
+           'title'=>'required|max:16',
+           'content'=>'required|max:255',
+           'money'=>'required|integer',
+           'billing_time'=>'required|date_format:Y-m-d',
+           'remark'=>'required|string|max:255',
+       ]);
+       if(!$res) return $this->stdResponse('-1');
+
+       if($this->check_token($request->api_token))
             return $this->stdResponse('-3');
-             
-        $res=$this->filter($request,[
-        'title'=>'required|max:16',
-        'content'=>'required|max:255',
-        'money'=>'required|integer',
-        'billing_time'=>'required|date_format:Y-m-d',
-        'remark'=>'required|string|max:255',
-        ]);     
-        if(!$res) return $this->stdResponse('-1');
-        
+
+       if($this->user_permission!=2){
+           return $this->stdResponse('-6');
+       }
+
         $obj=Finance::create($request->all());
         $obj->campus=$this->user_campus;
     	
@@ -42,19 +46,22 @@ class FinanceController extends Controller{
    }
    
     public function editFinance(Request $request,$id){
-     
-     	if(!($this->check_token($request->api_token)&&$this->user_permission==2))
-            return $this->stdResponse('-3');
-             
         $res=$this->filter($request,[
-        'title'=>'required|max:16',
-        'content'=>'required|max:255',
-        'money'=>'required|integer',
-        'billing_time'=>'required|date_format:Y-m-d',
-        'remark'=>'required|string|max:255',
-        ]);     
-        if(!$res) return $this->stdResponse('-1');   
-         
+            'title'=>'required|max:16',
+            'content'=>'required|max:255',
+            'money'=>'required|integer',
+            'billing_time'=>'required|date_format:Y-m-d',
+            'remark'=>'required|string|max:255',
+        ]);
+        if(!$res) return $this->stdResponse('-1');
+
+        if(!$this->check_token($request->api_token))
+            return $this->stdResponse('-3');
+
+        if($this->user_permission!=2){
+            return $this->stdResponse('-6');
+        }
+
          $obj=Finance::find($id);
          $obj->title=$request->title;
          $obj->content=$request->content;
@@ -65,14 +72,41 @@ class FinanceController extends Controller{
          
          return $this->stdResponse("1");
    }
-   
+
+   /*删除 财务*/
    public function deFinance(Request $request,$id){
-       	if(!($this->check_token($request->api_token)&&$this->user_permission==2))
+       	if(!$this->check_token($request->api_token))
             return $this->stdResponse('-3');
+
+       	if($this->user_permission!=2){
+       	    return $this->stdResponse('-6');
+        }
         $obj=Finance::find($id);
         $obj->delete();
         return $this->stdResponse("1");
    }
-   
-   
+
+   /*
+    * 获取财务条目
+    * */
+   public function showFinance(Request $request){
+       $filter=$this->filter($request,[
+           'page'=>'required|filled|numeric',
+           'rows'=>'required|filled|numeric'
+       ]);
+       if(!$filter) return $this->stdResponse('-1');
+
+       if(!$this->check_token($request->api_token))
+           return $this->stdResponse('-3');
+
+       if($this->user_permission!=2){
+           return $this->stdResponse('-6');
+       }
+
+       $finances = Finance::orderBy('id','desc')
+            ->paginate($request->rows);
+
+       return $this->stdResponse("1",$finances);
+
+   }
 }

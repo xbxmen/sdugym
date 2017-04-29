@@ -72,8 +72,12 @@ class MessageController extends Controller
 				->paginate($request->rows);
 				
 		/*make sure that $page is within the limits of [1, lastpage] */
-		if(!($request->page>=1&&$request->page<=$allmess->lastPage()))  
+		if(!($request->page>=1))
 			return $this->stdResponse('-1');
+
+		if($request->page>$allmess->lastPage()){
+            return $this->stdResponse('-11');
+        }
 		else
 			return $this->stdResponse('1',$allmess);	
 			

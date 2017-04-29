@@ -105,17 +105,18 @@ Route::group(['prefix'=>'/api/equipments/adjust'],function(){
 
 /* 新闻管理 */
 Route::group(['prefix'=>'/api/news'],function(){
-	Route::post('/content','NewsController@editNews');
+	Route::post('/content','NewsController@addNews');
 	Route::post('/picture','NewsController@uploadImg');
 	Route::get('/list','NewsController@getNewsList');
 	Route::get('/list/all','NewsController@getNewsListAll');
 	Route::get('/content/id/{id}','NewsController@getNewsContent');
+    Route::put('/content/id/{id}','NewsController@editNewsContent');
 	Route::put('/id/{id}','NewsController@checkNews');
 	Route::delete('/id/{id}','NewsController@deNews');
 	Route::delete('/picture/id/{id}','NewsController@deImg');
 	Route::get('/picture/path/{path}','NewsController@getImg');
 });
-/**/
+/*文档管理*/
 Route::group(['prefix'=>'/api/documents'],function(){
 	Route::post('/','DocumentController@uploadDoc');
 	Route::get('/','DocumentController@getList');
@@ -123,8 +124,12 @@ Route::group(['prefix'=>'/api/documents'],function(){
 	Route::delete('/id/{id}','DocumentController@deDoc');
 	
 });
+
+/*财务管理接口 */
 Route::group(['prefix'=>'/api/finances'],function(){
 	Route::post('/','FinanceController@addFinance');
 	Route::put('/id/{id}','FinanceController@editFinance');
 	Route::delete('/id/{id}','FinanceController@deFinance');
+	Route::get('/','FinanceController@showFinance');
+
 });

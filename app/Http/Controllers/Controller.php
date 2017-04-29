@@ -26,7 +26,8 @@ class Controller extends BaseController
         -7 => '用户名或密码错误',
         -8 => '文件上传失败',
         -9 => '申请场馆失败',
-        -10=> '存在时间冲突'
+        -10=> '存在时间冲突',
+        -11=> '没有更多内容'
     ];
 
     public $filterFail = false;

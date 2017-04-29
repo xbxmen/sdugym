@@ -85,9 +85,9 @@ class UserController extends Controller
         //success
         if($user->token_expire < date('Y-m-d H:i:s') || $user->api_token == "")
         {
-            $user->api_token = Crypt::encrypt($user->u_id."&".time());
+            /*$user->api_token = Crypt::encrypt($user->u_id."&".time());
             $user->token_expire = date('Y-m-d H:i:s',strtotime("+24 hour"));
-            $user->save();
+            $user->save();*/
         }
         return $this->stdResponse('1',$user->api_token);
     }

@@ -15,44 +15,45 @@ use Illuminate\Filesystem\Filesystem;
 use App\User;
 class NewsController extends Controller
 {
-	 public function editNews(Request $request){
+	 public function addNews(Request $request){
 		/* administor api_token checked*/
      	if(!$this->check_token($request->input('api_token'))){
      		return $this->stdResponse('-3');
      	} 	 
      	
      	$filter=$this->filter($request,[
-     	'title'=>'required|max:255|unique:news',
-     	'time'=>'required|date_format:Y-m-d',
-     	'article'=>'required',
-     	'writer'=>'required|max:12',
-     
+            'title'=>'required|max:255',
+            'time'=>'required|date_format:Y-m-d',
+            'article'=>'required',
+            'writer'=>'required|max:12',
      	]);	
-     	if(!$filter) return $this->stdResponse('-1');
+     	if(!$filter)
+     	    return $this->stdResponse('-1');
      
      	$news=News::create($request->all());
-     	
-     	$news->link='/api/news/content/id/'.$news->n_id;
-     	
-        $admin=User::where('api_token',$request->api_token)->first();
+
+     	$admin=User::where('api_token',$request->api_token)->first();
         
-     	$news->u_id=$admin->schoolnum;
+     	$news->u_id = $admin->schoolnum;
+
        	$news->save();
-     	if($request->has('image')){
+
+/*     	if($request->has('image')){
      	//	$astring =$request->image;
 		$jsonimg=explode(',',$request->image);
    	    foreach( $jsonimg as $aimage){
 	    	Picture::create(['n_id'=>$news->n_id,'path'=>$aimage]);
-   	    }
+   	    }*/
 		
-     	}
+     	/*}*/
      	return $this->stdResponse('1');
      	
 	 } 
 	 
-	 public function getNewsContent(Request $request,$id){
+	 public function getNewsContent($id){
 	 	/* all visitors allowed*/
-	 	$news=News::find($id);
+
+	 	$news=News::findOrFail($id);
 	 	return  $this->stdResponse('1',$news);
 	 	
 	 }
@@ -65,11 +66,11 @@ class NewsController extends Controller
 		if(!($request->page>=1&&$request->page<=$allnews->lastPage()))  
 			return $this->stdResponse('-1');
 		else{
-			 	$allneeds =collect();
-			    foreach($allnews as $new){
-	  	        $anews= array('title' =>$new->title ,'time'=>$new->time,'link'=>$new->link ); 
-	 	        $allneeds->push($anews);      	
-	   			}
+            $allneeds =collect();
+            foreach($allnews as $new){
+            $anews= array('title' =>$new->title ,'time'=>$new->time, 'id'=>$new->n_id);
+            $allneeds->push($anews);
+            }
 	    	return $this->stdResponse('1',$allneeds);
 		}
  
@@ -86,7 +87,7 @@ class NewsController extends Controller
 	 				->paginate($request->rows);;
 	 	$allneeds = collect();
 	    foreach($allnews as $new){
-	          $anews= array('title' =>$new->title ,'time'=>$new->time,'link'=>$new->link, 'id'=>$new->n_id, 'writer'=>$new->writer,'state'=>$new->state);
+	          $anews= array('title' =>$new->title ,'time'=>$new->time, 'id'=>$new->n_id, 'writer'=>$new->writer,'state'=>$new->state);
 	          $allneeds->push($anews);      	
 	    }
 	    return $this->stdResponse('1',$allneeds);
@@ -105,42 +106,88 @@ class NewsController extends Controller
      	if(!$res){
      		return $this->stdResponse('-1');
      	}
-     	
-     	$item=News::find($id);
-     	$item->state=$request->input('state');
-     	$item->save();
-     	return $this->stdResponse('1'); 
-	 }
+     	try{
+            $item=News::find($id);
+            $item->state=$request->input('state');
+            $item->save();
+        }catch (\Exception $exception){
+            return $this->stdResponse('-4');
+        }
+         return $this->stdResponse('1');
+
+     }
 	 
 	 public function deNews(Request $request,$id){
     	/* administor api_token checked*/
      	if(!$this->check_token($request->input('api_token'))){
      		return $this->stdResponse('-3');
      	}
-     	$picpath=Picture::where('n_id',$id)->get();
- //    	return $picpath;
+     /*	$picpath=Picture::where('n_id',$id)->get();
+
      	foreach($picpath as $item){
      		$npath=$item->path;
      		Storage::disk('pic')->delete($npath);
-     	}
-     	$item=News::find($id);
-     	
-     	$item->delete();
+     	}*/
 
+        /*删除新闻*/
+        try{
+            $item=News::find($id);
+
+            $item->delete();
+        }catch(\Exception $e){
+            return $this->stdResponse('-2');
+        }
      	return $this->stdResponse('1');
 	 }
-	 
+
+
+	 /*修改新闻内容*/
+	 public function editNewsContent(Request $request,$id){
+
+         $filter=$this->filter($request,[
+             'title'=>'required|max:255',
+             'time'=>'required|date_format:Y-m-d',
+             'article'=>'required',
+             'writer'=>'required|max:12',
+             'api_token'=>'required',
+         ]);
+         if(!$filter)
+             return $this->stdResponse('-1');
+
+         if(!$this->check_token($request->input('api_token'))){
+             return $this->stdResponse('-3');
+         }
+
+         try{
+             $new=News::find($id);
+
+             $new->title = $request->title;
+             $new->article = $request->article;
+             $new->writer = $request->writer;
+
+             $new->save();
+
+         }catch (\Exception $e){
+             return $this->stdResponse('-4');
+         }
+         return $this->stdResponse('1');
+     }
+
+
+
+	 //暂时用不到
+
 	 public function uploadImg(Request $request){
     	/* administor api_token checked*/
      	if(!$this->check_token($request->input('api_token'))){
      		return $this->stdResponse('-3');
      	}
-     	$Img=$request->file('newspic');  
+     	$Img=$request->file('newspic');
         /*get file config*/
-	    $originalName = $Img->getClientOriginalName(); 
-        $ext = $Img->getClientOriginalExtension();    
-        $realPath = $Img->getRealPath();   
-        $type = $Img->getClientMimeType();    
+	    $originalName = $Img->getClientOriginalName();
+        $ext = $Img->getClientOriginalExtension();
+        $realPath = $Img->getRealPath();
+        $type = $Img->getClientMimeType();
         /*upload img*/
         $filename = date('Y-m-d-H-i-s') . '-' .$originalName . '.' . $ext;
         /*use disk pic */
@@ -148,7 +195,7 @@ class NewsController extends Controller
 
      	return $this->stdResponse('1',$filename);
 	 }
-	 
+
 	 /*根据picture的id删除图片*/
      public function deImg(Request $request,$id){
     	/* administor api_token checked*/
