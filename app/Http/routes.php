@@ -50,11 +50,11 @@ Route::group(['prefix' => '/api/users'],function (){
     ////get  /users/i/users
     Route::delete('/i/people/{schoolnum}','UserController@delete');/*删除 权限下的用户*/
     ///user/i/people/::peropleid
-    Route::get('/i/gp','UserController@getGP');/* h*/
+    Route::get('/i/gp','UserController@getPower');/* h*/
     // post users/
     /*内务管理员*/
  //   Route::post('/addfin','UserController@addFin');/*root 创建财务管理员*/
-    Route::put('/i/people/{schoolnum}/auth','UserController@powerFin');/*root 为财务管理员添加权限或删除权限*/
+    Route::put('/i/people/{schoolnum}/auth','UserController@changePower');/*root 为财务管理员添加权限或删除权限*/
 });
 
 /*场馆日常管理表格 以/api/schedules 开头*/

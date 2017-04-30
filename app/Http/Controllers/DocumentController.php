@@ -18,11 +18,11 @@ class DocumentController extends Controller{
 /***      get documents list       ***/
   
   	public function getList(Request $request){
-    /**all visitors allowed **/
+        /**all visitors allowed **/
     	$alldoc=Document::orderBy('id','desc')->paginate($request->rows);
     
 		if(!($request->page>=1&&$request->page<=$alldoc->lastPage()))  
-			return $this->stdResponse('-1');
+			return $this->stdResponse('1');
 		else{
 	
 			return $this->stdResponse('1',$alldoc);
@@ -31,37 +31,43 @@ class DocumentController extends Controller{
   	}
 	
 	public function uploadDoc(Request $request){
+
+        //这里验证可以再补充
+        $filter = $this->filter($request,[
+            'document'=>'required|filled',
+            'document_name'=>'required|filled',
+        ]);
+        if(!$filter){
+            return $this->stdResponse();
+        }
      	/* administor api_token checked*/
      	if(!$this->check_token($request->input('api_token'))){
      		return $this->stdResponse('-3');
      	} 	 
-     	//这里验证可以再补充 	
-     	$filter=$this->filter($request,[
-     	 'document'=>'required',
-     	 'document_name'=>'required',
-     	]);
-     	
-    	$doc=$request->file('document');  
+
+    	$doc=$request->file('document');
         /*get file config*/
-	    $originalName = $doc->getClientOriginalName(); 
-        $ext = $doc->getClientOriginalExtension();    
-        $realPath = $doc->getRealPath();   
-        $type = $doc->getClientMimeType();    
+        $realPath = $doc->getRealPath();
         /*upload doc*/
-        $filename = date('Y-m-d-H-i-s') . '-' .$originalName ;
+        $filename = uniqid().'.'.$doc->getClientOriginalExtension();
         /*use disk doc */
         $bool = Storage::disk('doc')->put($filename, file_get_contents($realPath));
-        
-        $admin=User::where('api_token',$request->api_token)->first();
-        
-        $ndoc=new Document;
-        $ndoc->path=$filename;
-        $ndoc->u_id=$admin->schoolnum;
-     	$ndoc->title=$request->document_name;
-     	
-     	$ndoc->save();
-     	
-     	return $this->stdResponse('1');    	
+
+        if(!$bool){
+            return $this->stdResponse('-12');
+        }
+        try{
+            $ndoc = new Document();
+            $ndoc->path = $filename;
+            $ndoc->u_id = $this->user_id;
+            $ndoc->title = $request->document_name;
+
+            $ndoc->save();
+        }catch (\Exception $exception){
+            return  $this->stdResponse('-4');
+        }
+
+     	return $this->stdResponse('1');
 	
 	}
 	
@@ -79,11 +85,11 @@ class DocumentController extends Controller{
 	
 	}
 	
-	public function downDoc(Request $request,$id){
+	public function downDoc($id){
    	    $doc=Document::find($id);
 	    $docname=$doc->path;
 	    $title=$doc->title;
-	    $pathToFile=storage_path('public/documents').'/'.$docname;
+	    $pathToFile = storage_path('public/documents').'/'.$docname;
 	    return response()->download($pathToFile);
 	}
 }

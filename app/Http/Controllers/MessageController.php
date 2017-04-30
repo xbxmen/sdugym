@@ -14,14 +14,12 @@ use Illuminate\Support\Collection;
 
 class MessageController extends Controller
 {
-/********************************* Message board  **********************************/	
-
 	/** Submit message for visitors**/
 	public function addMessages(Request $request){
 	/* all visitors allowed*/
 
 		/*form check*/
-		$formc=$this->filter($request,[
+		$formc = $this->filter($request,[
             'title'=>'required|filled|string|min:6|max:25',
             'content'=>'required|filled|string|max:255',
             'name'=>'required|filled|string',
@@ -57,9 +55,6 @@ class MessageController extends Controller
 	/*Show messages*/
 	public function showMessages(Request $request,$type){
      	/* administor api_token checked*/
-     /*	if(!$this->check_token($request->input('api_token'))){
-     		return $this->stdResponse('-3');
-     	}*/
 		
 		$filter=$this->filter($request,[
 			'page'=>'required|filled|numeric',
@@ -76,7 +71,7 @@ class MessageController extends Controller
 			return $this->stdResponse('-1');
 
 		if($request->page>$allmess->lastPage()){
-            return $this->stdResponse('-11');
+            return $this->stdResponse('1');
         }
 		else
 			return $this->stdResponse('1',$allmess);	

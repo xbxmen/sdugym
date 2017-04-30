@@ -20,10 +20,12 @@ namespace App\Http\Controllers;
 
 
 use App\User;
+use App\Power;
 use Illuminate\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
 {
@@ -47,16 +49,27 @@ class UserController extends Controller
             return $this->stdResponse(-3);
         }
         /*创建用户*/
-        if($this->user_grade != $request->input('campus'))
+        if($this->user_schoolnum = "root")
         {
-            $user = new User();
-            $user->schoolnum = $request->input('schoolnum');
-            $user->password = md5($request->input('password')."#".$request->input('schoolnum'));
-            $user->grade = ++$this->user_grade;
-            $user->campus = $request->input('campus');
-            $user->realname = $request->input('realname');
-            $user->save();	
-            return $this->stdResponse(1);
+            DB::beginTransaction();
+            try{
+                $user = new User();
+                $user->schoolnum = $request->input('schoolnum');
+                $user->password = md5($request->input('password')."#".$request->input('schoolnum'));
+                $user->campus = $request->input('campus');
+                $user->realname = $request->input('realname');
+                $user->save();
+
+                $power = new Power();
+                $power->u_id = $user->u_id;
+                $power->save();
+
+                DB::commit();
+                return $this->stdResponse(1);
+            }catch (\Exception $exception){
+                DB::rollback();
+                return $this->stdResponse("-4");
+            }
         }
         return $this->stdResponse("-6");
     }
@@ -83,11 +96,11 @@ class UserController extends Controller
             return $this->stdResponse('-7');
         }
         //success
-        if($user->token_expire < date('Y-m-d H:i:s') || $user->api_token == "")
+        if($user->token_expire < date('Y-m-d H:i:s'))
         {
-            /*$user->api_token = Crypt::encrypt($user->u_id."&".time());
+            $user->api_token = Crypt::encrypt($user->u_id."&".time());
             $user->token_expire = date('Y-m-d H:i:s',strtotime("+24 hour"));
-            $user->save();*/
+            $user->save();
         }
         return $this->stdResponse('1',$user->api_token);
     }
@@ -125,32 +138,32 @@ class UserController extends Controller
         }
         return $this->stdResponse("-4");
     }
-    /*返回 当前管理员权限下面的所有用户
+     /*
      *root用户 返回所有校区负责人
-     * 校区负责人  返回当前校区的管理员
-     * 校区管理员  没有权限查看
+     *
      * */
     public function allinfo(Request $request)
     {
-        $users = "";
+       /* $filter=$this->filter($request,[
+            'page'=>'required|filled|numeric',
+            'rows'=>'required|filled|numeric'
+        ]);
+        if(!$filter) return $this->stdResponse('-1');*/
+
         //验证用户 token
         if(!$this->check_token($request->input('api_token'))){
             return $this->stdResponse("-3");
         }
-        //查找符合要求的user
-        if($this->user_grade == "1"){
-            $users = User::where('grade',2)->get();
-
-        }else if($this->user_grade == "2"){
-            $users = User::where('campus',$this->user_campus)
-                ->where('grade',3)->get();
+        $users = "";
+        if($this->user_schoolnum == "root"){
+            $users = DB::table('users')->leftJoin('power','users.u_id','=','power.u_id')
+                ->where('users.schoolnum','<>','root')
+                ->get();
         }
         return $this->stdResponse("1",$users);
     }
     /*删除管理员
-     * root用户可以删除 校区负责人
-     * 校区负责人 可以删除 该校区的管理员
-     * 校区的管理员没有删除权限
+     *
      * */
     public function delete(Request $request,$schoolnum)
     {
@@ -159,14 +172,17 @@ class UserController extends Controller
         {
             return $this->stdResponse("-3");
         }
+
+        if($this->user_schoolnum != "root" ){
+            return $this->stdResponse("-6");
+        }
         $user = User::where('u_id',$schoolnum)
                 ->get();
         if(!$user->count() > 0)
         {
             return $this->stdResponse("-5");
         }
-        $res =  User::where('u_id',$schoolnum)
-            ->where('grade','>',$this->user_grade)->delete();
+        $res =  User::where('u_id',$schoolnum)->delete();
         if($res){
             return $this->stdResponse("1");
         }
@@ -183,73 +199,35 @@ class UserController extends Controller
         if(!$res){
             return $this->stdResponse();
         }
-        $res = User::where('api_token',$request->input('api_token'))
-            ->update(['token_expire'=>date('Y-m-d H:i:s')]);
-        if($res){
+       /* $res = User::where('api_token',$request->input('api_token'))
+            ->update(['token_expire'=>'2000-01-01']);*/
+
+        if($res == 1){
             return $this->stdResponse("1");
+        }else{
+            return $this->stdResponse("-4");
         }
-        return $this->stdResponse("-4");
     }
     /*获取 当前 用户级别 和 用户权限 默认是 1
      *
      * */
-    public function getGP(Request $request)
+    public function getPower(Request $request)
     {
         //验证用户 token
         if(!$this->check_token($request->input('api_token')))
         {
             return $this->stdResponse("-3");
         }
-        if($this->user_grade)
-        {
-            return $this->stdResponse("1",["grade"=>$this->user_grade]);
-        }
-        return $this->stdResponse("-3");
-    }
 
-    /*财务管理员部分*/
-
-    /*
-     * 添加 财务管理员
-     * */
-    public function addFin(Request $request)
-    {
-        $res = $this->filter($request,[
-            'schoolnum'=>'required|unique:users|numeric|digits:12|filled',
-            'password'=>'required|digitsbetween:6,60|filled',
-            'campus'=>'required|filled',
-            'api_token'=>'required|filled'
-        ]);
-        if(!$res)
-        {
-            return $this->stdResponse();
-        }
-        //验证用户 token
-        if(!$this->check_token($request->input('api_token')))
-        {
-            return $this->stdResponse(-3);
-        }
-        /*创建用户*/
-        if($this->user_grade == "1")
-        {
-            $user = new User();
-            $user->schoolnum = $request->input('schoolnum');
-            $user->password = md5($request->input('password')."#".$request->input('schoolnum'));
-            $user->grade = "4";
-            $user->campus = $request->input('campus');
-            $user->save();
-            return $this->stdResponse(1);
-        }
-        return $this->stdResponse("-6");
+        return $this->stdResponse("1",Power::find($this->user_id));
     }
 
     /*
      * root 用户为 财务管理员添加权限或删除权限  通过传递的id的不同
      * */
-    public function powerFin(Request $request,$schoolnum)
+    public function changePower(Request $request,$schoolnum)
     {
         $res = $this->filter($request,[
-            'permission'=>'required|filled',
             'api_token'=>'required|filled'
         ]);
         if(!$res)
@@ -261,18 +239,18 @@ class UserController extends Controller
         {
             return $this->stdResponse(-3);
         }
-        /*创建用户*/
-        if(!$this->user_grade == "1")
+        if($this->user_schoolnum != "root")
         {
             return $this->stdResponse("-6");
         }
 
-        $res = User::where('u_id',$schoolnum)
-            ->update(['permission'=>$request->input('permission')]);
-        if(!$res)
-        {
+        try{
+            Power::where('u_id',$request->input('u_id'))
+                ->update($request->except('api_token'));
+            return $this->stdResponse("1");
+        }catch (\Exception $exception){
             return $this->stdResponse("-4");
         }
-        return $this->stdResponse("1");
     }
+
 }

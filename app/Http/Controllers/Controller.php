@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Support\Facades\DB;
 
 class Controller extends BaseController
 {
@@ -27,17 +28,30 @@ class Controller extends BaseController
         -8 => '文件上传失败',
         -9 => '申请场馆失败',
         -10=> '存在时间冲突',
-        -11=> '没有更多内容'
+        -11=> '没有更多内容',
+        -12=> '服务器错误'
     ];
 
     public $filterFail = false;
     public $backMeg;
     public $api_token =  "";
-    public $user_grade = "";
-    public $user_permission = "";
+   /* public $user_grade = "";
+    public $user_permission = "";*/
     public $user_campus = "";
-    
-    
+    public $user_schoolnum = "";
+    public $user_id = "";
+
+    public $user_mu = "";
+    public $user_zx = "";
+    public $user_hj = "";
+    public $user_xl = "";
+    public $user_bt = "";
+    public $user_qf = "";
+    public $user_rj = "";
+    public $user_finance = "";
+    public $user_equipment = "";
+    public $user_news = "";
+
     public function stdResponse($code='',$result='')
     {
         $hashCode = ($code || $code === 1);
@@ -61,14 +75,30 @@ class Controller extends BaseController
     //验证 user 权限
     public function check_token($api_token)
     {
-        $res = User::where('api_token',$api_token)
-            ->where('token_expire','>',date('Y-m-d H:i:s'))->first();
+        $res = DB::table('users')
+            ->where('api_token','=',$api_token)
+            ->where('token_expire','>',date('Y-m-d H:i:s'))
+            ->leftJoin('power','users.u_id','=','power.u_id')->first();
 
         if(count($res) > 0){
             $this->api_token = $api_token;
             $this->user_grade = $res->grade;
             $this->user_permission = $res->permission;
             $this->user_campus = $res->campus;
+            $this->user_schoolnum = $res->schoolnum;
+            $this->user_id = $res->u_id;
+
+            /*用户权限*/
+            $this->user_mu = $res->mu;
+            $this->user_zx = $res->zx;
+            $this->user_hj = $res->hj;
+            $this->user_xl = $res->xl;
+            $this->user_bt = $res->bt;
+            $this->user_qf = $res->qf;
+            $this->user_rj = $res->rj;
+            $this->user_finance = $res->finance;
+            $this->user_equipment = $res->equipment;
+            $this->user_news = $res->news;
             return true;
         }
         return false;

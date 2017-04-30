@@ -15,13 +15,13 @@ class Document extends Model
 
     protected $primaryKey = "id";
 
-    protected $fillable = ['path','title','u_id'];
+    protected $fillable = ['path','title','u_id','path'];
 
     /**
      * The attributes excluded from the model's JSON form.
      *
      * @var array
      */
-    protected $hidden = ['path','updated_at'];
+    protected $hidden = ['updated_at'];
 
 }

@@ -22,18 +22,17 @@ class EquipmentController extends Controller{
      	}
      	
     	$res=$this->filter($request,[
-    	'campus'=>'required|filled',
-    	'gym'=>'required|filled',
-    	'equipment_name'=>'required|filled',
-    	'buy_date'=>'required|filled|date_format:"Y-m-d',
-    	'buy_number'=>'required|filled|integer',
-    	'in_number'=>'required|integer|filled',
-    	'no_number'=>'required|filled|integer',
-    	'use_campus'=>'required|filled|string',
-    	'use_number'=>'required|filled|integer',
-    	'price'=>'required|filled|integer',
-    	'remark'=>'required|filled|string|max:255'
-    	
+            'campus'=>'required|filled',
+            'gym'=>'required|filled',
+            'equipment_name'=>'required|filled',
+            'buy_date'=>'required|filled|date_format:"Y-m-d',
+            'buy_number'=>'required|filled|integer',
+            'in_number'=>'required|integer|filled',
+            'no_number'=>'required|filled|integer',
+            'use_campus'=>'required|filled|string',
+            'use_number'=>'required|filled|integer',
+            'price'=>'required|filled|integer',
+            'remark'=>'required|filled|string|max:255'
     	]);
     	if(!$res){
     		return $this->stdResponse('-1');

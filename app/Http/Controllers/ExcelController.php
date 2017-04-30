@@ -58,13 +58,12 @@ class ExcelController extends Controller
                 }catch (\Exception $e){
                     $this->flag = false;
                 }
-
             }
         },'UTF-8');
 
+        Storage::delete($filename);
         if($this->flag){
         	/*delete  upload file*/
-        	Storage::delete($filename);
             return $this->stdresponse("1");
         }
         return $this->stdresponse("-4");

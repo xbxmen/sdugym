@@ -4,12 +4,18 @@ namespace App;
 
 use Illuminate\Database\Eloquent\Model;
 
-class User extends Model
+class Power extends Model
 {
 
-    protected $table = "users";
+    protected $table = "power";
 
     protected $primaryKey = "u_id";
+    /**
+     * 表明模型是否应该被打上时间戳
+     *
+     * @var bool
+     */
+    public $timestamps = false;
 
     /**
      * The attributes that are mass assignable.
@@ -17,7 +23,7 @@ class User extends Model
      * @var array
      */
     protected $fillable = [
-        'u_id','schoolnum', 'username', 'password','campus','realname','tel'
+        'u_d','zx','bt', 'qf', 'rj','xl','hj','news','finance','equipment'
     ];
 
     /**
@@ -26,10 +32,6 @@ class User extends Model
      * @var array
      */
     protected $hidden = [
-        'password','api_token','token_expire','zx','hj','xl','bt','qf','rj','news','finance','equipment'
-    ];
 
-  /*  public function getPower(){
-        return $this->hasOne('Power','u_id','u_id');
-    }*/
+    ];
 }
