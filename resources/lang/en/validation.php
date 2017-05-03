@@ -32,7 +32,7 @@ return [
     'date'                 => ':attribute 不符合日期格式（2017-01-01）.',
     'date_format'          => ':attribute 不符合日期格式 :format.',
     'different'            => 'The :attribute and :other must be different.',
-    'digits'               => 'The :attribute must be :digits digits.',
+    'digits'               => ':attribute 必须是 :digits 位.',
     'digits_between'       => 'The :attribute must be between :min and :max digits.',
     'distinct'             => 'The :attribute field has a duplicate value.',
     'email'                => 'The :attribute must be a valid email address.',

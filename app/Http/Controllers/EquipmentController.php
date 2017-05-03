@@ -12,43 +12,89 @@ use Illuminate\Http\Request;
 use App\Equipment;
 use App\User;
 use App\Equipmentadjust;
+use Illuminate\Support\Facades\DB;
 class EquipmentController extends Controller{
-/************************* Equipment manage  prefix /api/equipments***************************/	
+/************************* Equipment manage  prefix /api/equipments***************************/
 
 	public function postRegistry(Request $request){	
-     	/* administor api_token checked*/
-     	if(!$this->check_token($request->input('api_token'))){
-     		return $this->stdResponse('-3');
-     	}
-     	
+
     	$res=$this->filter($request,[
             'campus'=>'required|filled',
             'gym'=>'required|filled',
             'equipment_name'=>'required|filled',
             'buy_date'=>'required|filled|date_format:"Y-m-d',
             'buy_number'=>'required|filled|integer',
-            'in_number'=>'required|integer|filled',
-            'no_number'=>'required|filled|integer',
-            'use_campus'=>'required|filled|string',
-            'use_number'=>'required|filled|integer',
             'price'=>'required|filled|integer',
             'remark'=>'required|filled|string|max:255'
     	]);
+
+        /* administor api_token checked*/
+        if(!$this->check_token($request->input('api_token'))){
+            return $this->stdResponse('-3');
+        }
+
+        if($this->user_equipment != 1){
+            return $this->stdResponse('-6');
+        }
+
     	if(!$res){
     		return $this->stdResponse('-1');
     	}
-	      
-     	$eqp=Equipment::create($request->all());
+        $arr = $request->except('api_token');
+    	$arr->u_id = $this->user_id;
 
-	  	return $this->stdResponse('1');  
+    	try{
+            $eqp = Equipment::insert($arr);
+            return $this->stdResponse('1');
+        }catch (\Exception $exception){
+            return $this->stdResponse('-4');
+        }
 	}
-	
+
+	public function putRegistry(Request $request,$id){
+        /* administor api_token checked*/
+        if(!$this->check_token($request->input('api_token'))){
+            return $this->stdResponse('-3');
+        }
+
+        if($this->user_equipment != 1){
+            return $this->stdResponse('-6');
+        }
+
+        $res = $this->filter($request,[
+            'buy_date'=>'required|filled|date_format:"Y-m-d',
+            'buy_number'=>'required|filled|integer',
+            'in_number'=>'required|integer|filled',
+            'no_number'=>'required|filled|integer',
+            'price'=>'required|filled|integer',
+            'remark'=>'required|filled|string|max:255'
+        ]);
+
+        if(!$res){
+            return $this->stdResponse('-1');
+        }
+        try{
+            $eqp = Equipment::where('id','=',$id)
+                ->update($request->except('api_token'));
+
+            return $this->stdResponse('1',$eqp);
+        }catch (\Exception $exception){
+            return $this->stdResponse('-12');
+        }
+    }
+
+    /*获取某个校区的器材*/
 	public function getRegistry(Request $request,$campus){
      	/* administor api_token checked*/
      	if(!$this->check_token($request->input('api_token'))){
      		return $this->stdResponse('-3');
      	}
-     	$eqpmts=Equipment::where('campus',$campus)->get();		
+
+        if($this->user_equipment != 1){
+            return $this->stdResponse('-6');
+        }
+
+        $eqpmts=Equipment::where('campus',$campus)->get();
 		return $this->stdResponse('1',$eqpmts);
 	
 	}
@@ -58,50 +104,102 @@ class EquipmentController extends Controller{
      	if(!$this->check_token($request->input('api_token'))){
      		return $this->stdResponse('-3');
      	}
-     	
-     	$item=Equipment::find($id);
-     	$item->delete();
+         if($this->user_equipment != 1){
+             return $this->stdResponse('-6');
+         }
+
+         $item=Equipment::find($id);
+     	 $item->delete();
      	
      	return $this->stdResponse('1');
      }
+
+    /*获取某个校区的器材*/
+    public function getRegistryByName(Request $request,$name){
+        /* administor api_token checked*/
+        if(!$this->check_token($request->input('api_token'))){
+            return $this->stdResponse('-3');
+        }
+
+        if($this->user_equipment != 1){
+            return $this->stdResponse('-6');
+        }
+
+        $res = Equipment::where('equipment_name',$name)->get();
+        return $this->stdResponse('1',$res);
+
+    }
+    /* adminitor delete apply form*/
+    public function deRegistry(Request $request,$id){
+        /* administor api_token checked*/
+        if(!$this->check_token($request->input('api_token'))){
+            return $this->stdResponse('-3');
+        }
+        if($this->user_equipment != 1){
+            return $this->stdResponse('-6');
+        }
+
+        try{
+            $item = Equipment::find($id);
+
+            if(count($item) == 0){
+                return $this->stdResponse('-5');
+            }
+            $res = $item->delete();
+
+            return $res ? $this->stdResponse('1') : $this->stdResponse('-4');
+
+        }catch (\Exception $exception){
+            return $this->stdResponse('-12');
+        }
+    }
+
+
  /************************* Equipment adjust  ,prefix /api/equipments/adjust ***************************/	
    	public function postAdjust(Request $request){
       	/* administor api_token checked*/
-     	if(!$this->check_token($request->input('api_token'))){
-     		return $this->stdResponse('-3');
-     	}  
-    	
+
     	$res=$this->filter($request,[
-    	'belong_campus'=>'required|filled',
-    	'use_campus'=>'required|filled',
-    	'belong_gym'=>'required|filled',
-    	'use_gym'=>'required|filled',
-    	'equipment_name'=>'required|filled|string',
-    	'use_number'=>'required|integer|filled',
-    	'remark'=>'required|filled|string|max:255'
-    	
+    	    'id'=>'required',
+            'belong_campus'=>'required|filled',
+            'use_campus'=>'required|filled',
+            'belong_gym'=>'required|filled',
+            'use_gym'=>'required|filled',
+            'equipment_name'=>'required|filled|string',
+            'use_number'=>'required|integer|filled',
+            'remark'=>'required|filled|string|max:255'
     	]);
     	if(!$res){
     		return $this->stdResponse('-1');
-    	}     	
-     	$admin=	User::where('api_token',$request->api_token)->first();		
-     	
-     	$newitem=new Equipmentadjust;
-     	
-     	$newitem->belong_campus=$request->belong_campus;
-     	$newitem->use_campus=$request->use_campus;
-     	$newitem->belong_gym=$request->belong_gym;
-     	$newitem->use_gym=$request->use_gym;
-     	$newitem->equipment_name=$request->equipment_name;
-     	$newitem->use_number=$request->use_number;
-     	$newitem->remark=$request->remark;
-     	$newitem->adminname=$admin->schoolnum;
-     	
-     	$newitem->save();
-  
-     	return $this->stdResponse('1');
-   		
+    	}
+
+        if(!$this->check_token($request->input('api_token'))){
+            return $this->stdResponse('-3');
+        }
+
+     	$arr = $request->except('api_token')->except('id');
+     	$arr['u_id'] = $this->user_id;
+
+     	DB::beginTransaction();
+     	try{
+            $newitem = Equipmentadjust::insert($arr);
+
+            $res = Equipment::where('id','=',$request->id)
+                ->increment('out_number',$request->use_number);
+
+            if($newitem && $res){
+                return $this->stdResponse('1');
+                DB::commit();
+            }else{
+                return $this->stdResponse('-4');
+            }
+            
+        }catch (\Exception $exception){
+            DB::rollback();
+     	    return $this->stdResponse('-4');
+        }
    	}
+
 	public function getAdjust(Request $request,$campus){
      	/* administor api_token checked*/
      	if(!$this->check_token($request->input('api_token'))){

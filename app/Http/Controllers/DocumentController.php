@@ -21,7 +21,7 @@ class DocumentController extends Controller{
         /**all visitors allowed **/
     	$alldoc=Document::orderBy('id','desc')->paginate($request->rows);
     
-		if(!($request->page>=1&&$request->page<=$alldoc->lastPage()))  
+		if(!($request->page>=1 && $request->page<=$alldoc->lastPage()))
 			return $this->stdResponse('1');
 		else{
 	

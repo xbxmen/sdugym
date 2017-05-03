@@ -11,11 +11,13 @@ use Illuminate\Database\Eloquent\Model;
 
 class Message extends Model
 {
-    protected $table = "mess_boards";
+    protected $table = "messages";
 
     protected $primaryKey = "id";
 
-    protected $fillable = [ 'type','title','content','name','tel','email'];
+    public $timestamps = true;
+
+    protected $fillable = [ 'type','title','content','name','tel','email','state','remark'];
 
     /**
      * The attributes excluded from the model's JSON form.
@@ -23,6 +25,5 @@ class Message extends Model
      * @var array
      */
     protected $hidden = [];
-    public $timestamps = true;
 
 }

@@ -29,7 +29,9 @@ class Controller extends BaseController
         -9 => '申请场馆失败',
         -10=> '存在时间冲突',
         -11=> '没有更多内容',
-        -12=> '服务器错误'
+        -12=> '服务器错误',
+        -13=> '申请流程已经进入下一个流程，您没有权限进行该操作~',
+        -14=> '请不要重复提交'
     ];
 
     public $filterFail = false;
@@ -82,8 +84,6 @@ class Controller extends BaseController
 
         if(count($res) > 0){
             $this->api_token = $api_token;
-            $this->user_grade = $res->grade;
-            $this->user_permission = $res->permission;
             $this->user_campus = $res->campus;
             $this->user_schoolnum = $res->schoolnum;
             $this->user_id = $res->u_id;

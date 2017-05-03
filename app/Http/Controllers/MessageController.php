@@ -19,23 +19,27 @@ class MessageController extends Controller
 	/* all visitors allowed*/
 
 		/*form check*/
-		$formc = $this->filter($request,[
-            'title'=>'required|filled|string|min:6|max:25',
+		$res = $this->filter($request,[
+            'title'=>'required|filled|string|max:25',
             'content'=>'required|filled|string|max:255',
             'name'=>'required|filled|string',
             'tel'=>'required|filled|digits:11',
             'email'=>'required|filled|email',
             'type'=>'required|filled|string'
         ]);
-        if(!$formc)
+        if(!$res)
         {
             return $this->stdResponse('-1');
         }
-        
-        $mess=Message::create($request->all());
-        
-        return $this->stdResponse('1');
 
+        try{
+            $res = Message::create($request->all());
+
+            return $res ? $this->stdResponse('1') : $this->stdResponse('-4');
+
+        }catch (\Exception $exception){
+            return $this->stdResponse('-12');
+        }
 	}
 	
 	/*Administor delete outside messages, param $id */
@@ -44,12 +48,15 @@ class MessageController extends Controller
      	if(!$this->check_token($request->input('api_token'))){
      		return $this->stdResponse('-3');
      	}
-     	
-    	$item=Message::find($id);
-    	if(!$item) 
-    		return $this->stdResponse('-1');
-     	$item->delete();
-     	return $this->stdResponse('1');
+
+     	try{
+            $item = Message::find($id);
+
+            $res = $item->delete();
+            return $res? $this->stdResponse('1') : $this->stdResponse('-4');
+        }catch (\Exception $exception){
+            return $this->stdResponse('-12');
+        }
 	}
 	
 	/*Show messages*/
@@ -61,38 +68,109 @@ class MessageController extends Controller
 			'rows'=>'required|filled|numeric'
 		]);
 		if(!$filter) return $this->stdResponse('-1');
-		
-		$allmess=Message::where('type',$type)
+
+        /*make sure that $page is within the limits of [1, lastpage] */
+        if(!($request->page >= 1))
+            return $this->stdResponse('-1');
+
+		$allmess = Message::where('type',$type)
+                ->where('state','1')
 				->orderBy('id','desc')
 				->paginate($request->rows);
 				
-		/*make sure that $page is within the limits of [1, lastpage] */
-		if(!($request->page>=1))
-			return $this->stdResponse('-1');
 
-		if($request->page>$allmess->lastPage()){
+		if($request->page > $allmess->lastPage()){
             return $this->stdResponse('1');
+        } else{
+            return $this->stdResponse('1',$allmess);
         }
-		else
-			return $this->stdResponse('1',$allmess);	
-			
 	}
-	
+
+    /*Show All messages*/
+    public function showAllMessages(Request $request,$type){
+
+        $filter=$this->filter($request,[
+            'page'=>'required|filled|numeric',
+            'rows'=>'required|filled|numeric',
+            'api_token'=>'required|filled'
+        ]);
+        if(!$filter) return $this->stdResponse('-1');
+
+        /* administor api_token checked*/
+        if(!$this->check_token($request->input('api_token'))){
+            return $this->stdResponse('-3');
+        }
+
+        /*make sure that $page is within the limits of [1, lastpage] */
+        if(!($request->page >= 1))
+            return $this->stdResponse('-1');
+
+        $allmess = Message::orderBy('id','desc')
+            ->paginate($request->rows);
+
+
+        if($request->page > $allmess->lastPage()){
+            return $this->stdResponse('1');
+        } else{
+            return $this->stdResponse('1',$allmess);
+        }
+    }
+
+
+    /*获取联系方式*/
 	public function getContactInfo(Request $request,$id){
      	/* administor api_token checked*/
      	if(!$this->check_token($request->input('api_token'))){
      		return $this->stdResponse('-3');
      	}
-     	
-     	$contact=Message::find($id);
-        if(!$contact) 
-        	return $this->stdResponse('-1');
-     	
-     	$item=collect(['name'=>$contact->name,'tel'=>$contact->tel,'email'=>$contact->email]);
-     	
-     	return $this->stdResponse('1',$item->toJson());
-				
+
+     	try{
+            $contact = Message::find($id)
+                        ->select(['name','tel','email']);
+            if(!$contact)
+                return $this->stdResponse('-5');
+
+            return $this->stdResponse('1',$contact);
+
+        }catch (\Exception $exception){
+            return $this->stdResponse('-12');
+        }
 	}
 
+	/**/
+	public function checkMessage(Request $request,$id){
 
+        /*form check*/
+        $res = $this->filter($request,[
+            'state'=>'required|filled',
+        //    'remark'=>'required|filled|string'
+        ]);
+        if(!$res)
+        {
+            return $this->stdResponse('-1');
+        }
+
+        /* administor api_token checked*/
+        if(!$this->check_token($request->input('api_token'))){
+            return $this->stdResponse('-3');
+        }
+
+        try{
+            $contact = Message::find($id);
+            if(count($contact) == 0){
+                return $this->stdResponse('-5');
+            }
+
+            $contact->state = $request->state;
+        //    $contact->remark = $request->remark;
+
+            $res = $contact->save();
+
+            return $res ? $this->stdResponse('1') : $this->stdResponse('-14');
+
+        }catch (\Exception $exception){
+            return $this->stdResponse('-12');
+        }
+
+    }
 }

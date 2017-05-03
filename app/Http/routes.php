@@ -70,6 +70,8 @@ Route::group(['prefix'=>'/api/apply'],function(){
 	Route::get('/campus/{campus}/gym/{gym}','ApplicationController@showApply');/*show application for adminitor */
 	Route::put('/{id}','ApplicationController@checkApply');/*adminitor submit state of application-checked */
 	Route::delete('/{id}','ApplicationController@deApply');/*adminitor delete application form*/
+    Route::get('/tel/{tel}','ApplicationController@getOneApply');/*show application for adminitor */
+
 });
 /* 场馆申请表格 训练班 申请 */
 Route::group(['prefix'=>'/api/apply/train'],function(){
@@ -77,30 +79,35 @@ Route::group(['prefix'=>'/api/apply/train'],function(){
 	Route::get('/campus/{campus}/gym/{gym}','ApplicationController@trainShowApply');/*show train-application for adminitor */
 	Route::put('/{id}','ApplicationController@trainCheckApply');/*adminitor submit state of train-application-checked */
 	Route::delete('/{id}','ApplicationController@trainDeApply');/*adminitor delete train-application-form*/
+    Route::get('/tel/{tel}','ApplicationController@getOneTrainApply');/*show application for adminitor */
 });
 /*留言板接口 */
 Route::group(['prefix'=>'/api/messages'],function(){
 	Route::post('/','MessageController@addMessages');
 	Route::get('/type/{type}','MessageController@showMessages');
-	Route::get('/id/{id}','MessageController@getContactInfo');
-    Route::delete('/{id}','MessageController@deMessage');
-});
-/*文件管理接口*/
-Route::group(['prefix' => '/api/documents/'],function (){
+    Route::get('/all/type/{type}','MessageController@showAllMessages');
 
-    Route::post('/','DocumentController@upload');
+    Route::get('/id/{id}','MessageController@getContactInfo');
+    Route::delete('/id/{id}','MessageController@deMessage');
+
+    Route::put('/id/{id}','MessageController@checkMessage'); /*审核 留言*/
 });
+
 /* 器材管理 */
 Route::group(['prefix'=>'/api/equipments'],function(){
 	Route::post('/','EquipmentController@postRegistry');
 	Route::get('/campus/{campus}','EquipmentController@getRegistry');
 	Route::delete('/id/{id}','EquipmentController@deRegistry');
+    Route::put('/id/{id}','EquipmentController@putRegistry');
+
+    Route::get('/name/{name}','EquipmentController@getRegistryByName');
 });
 /* 器材调用 管理  */
 Route::group(['prefix'=>'/api/equipments/adjust'],function(){
 	Route::post('/','EquipmentController@postAdjust');
 	Route::get('/campus/{campus}','EquipmentController@getAdjust');
 	Route::delete('/id/{id}','EquipmentController@deAdjust');
+
 });
 
 /* 新闻管理 */
@@ -112,10 +119,28 @@ Route::group(['prefix'=>'/api/news'],function(){
 	Route::get('/content/id/{id}','NewsController@getNewsContent');
     Route::put('/content/id/{id}','NewsController@editNewsContent');
 	Route::put('/id/{id}','NewsController@checkNews');
-	Route::delete('/id/{id}','NewsController@deNews');
-	Route::delete('/picture/id/{id}','NewsController@deImg');
+	Route::delete('/id/{id}','NewsController@delNews');
+	Route::delete('/picture/id/{id}','NewsController@delImg');
 	Route::get('/picture/path/{path}','NewsController@getImg');
 });
+
+/* 通知管理 */
+Route::group(['prefix'=>'/api/notices'],function(){
+    Route::post('/content','NoticeController@addNotice');
+    Route::get('/list','NoticeController@getNoticeList');
+    Route::get('/list/all','NoticeController@getNoticeListAll');
+    Route::get('/content/id/{id}','NoticeController@getNoticeContent');
+    Route::put('/content/id/{id}','NoticeController@editNoticeContent');
+    Route::put('/id/{id}','NoticeController@checkNotice');
+    Route::delete('/id/{id}','NoticeController@delNotice');
+});
+
+/*文件管理接口*/
+/*Route::group(['prefix' => '/api/documents/'],function (){
+
+    Route::post('/','DocumentController@upload');
+});*/
+
 /*文档管理*/
 Route::group(['prefix'=>'/api/documents'],function(){
 	Route::post('/','DocumentController@uploadDoc');

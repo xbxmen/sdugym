@@ -157,7 +157,7 @@ class UserController extends Controller
         $users = "";
         if($this->user_schoolnum == "root"){
             $users = DB::table('users')->leftJoin('power','users.u_id','=','power.u_id')
-                ->where('users.schoolnum','<>','root')
+               /* ->where('users.schoolnum','<>','root')*/
                 ->get();
         }
         return $this->stdResponse("1",$users);

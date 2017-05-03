@@ -18,69 +18,82 @@ class NewsController extends Controller
 {
 	 public function addNews(Request $request){
 
-	     /*
-	      * 验证管理员权限
-	      * */
-     	if(!$this->check_token($request->input('api_token'))){
-     		return $this->stdResponse('-3');
-     	} 	 
-     	
      	$filter=$this->filter($request,[
             'title'=>'required|max:255',
             'time'=>'required|date_format:Y-m-d',
-            'article'=>'required',
-            'writer'=>'required',
-        //    'picture'=>'required'
+            'article'=>'required|filled',
+            'writer'=>'required|filled',
+         //   'picture'=>'required|filled'
      	]);
-     	if(!$filter)
+         /*
+        * 验证管理员权限
+        * */
+         if(!$this->check_token($request->input('api_token'))){
+             return $this->stdResponse('-3');
+         }
+
+         if(!$filter)
      	    return $this->stdResponse('-1');
 
+     	/*用户需要有管理新闻的权限 */
+     	if($this->user_news != 1 ){
+            return $this->stdResponse('-6');
+        }
      	/*添加新闻*/
      	try{
-
      	    $txt = uniqid().'.txt';
 
             Storage::disk('pic')->put($txt,$request->article);
-            $news=News::create($request->except('article'));
+
+            $news = new News();
 
             $news->u_id = $this->user_id;
             $news->article = $txt;
-            $news->save();
+            $news->picture = $request->picture ? $request->picture : "";
+            $news->writer = $request->writer ? $request->writer : "";
+            $news->time = $request->time ? $request->time : "";
+            $news->title = $request->title ? $request->title : "";
+
+            $res = $news->save();
+            return $res ? $this->stdResponse('1') : $this->stdResponse('-4');
         }catch (\Exception $exception) {
-            return $this->stdResponse('-4');
+            return $this->stdResponse('-12');
+        }catch (\Error $error){
+            return $this->stdResponse('-12');
         }
-     	return $this->stdResponse('1');
-     	
-	 } 
+	 }
 
      //获取新闻内容
 	 public function getNewsContent($id){
 	 	/* all visitors allowed*/
 
-	 	$news = News::findOrFail($id);
+	 	try{
+            $news = News::findOrFail($id);
 
-	 	$news->article = Storage::disk('pic')->read($news->article);
+            if(count($news) == 0){
+                return $this->stdResponse('-5');
+            }
+            $news->article = Storage::disk('pic')->read($news->article);
 
-	 	return $this->stdResponse('1',$news);
-	 	
+            return $this->stdResponse('1',$news);
+
+        }catch (\Error $exception){
+            return $this->stdResponse('-12');
+        }
 	 }
 
 	 //获取新闻列表（已经通过）
 	 public function getNewsList(Request $request){
 	 	/* request needs to include $page & $rows */
-	 	$allnews=News::where('state',3)->orderBy('n_id','desc')
-	 				->paginate($request->rows);;
-	 	
-		if(!($request->page>=1&&$request->page<=$allnews->lastPage()))  
-			return $this->stdResponse('-1');
-		else{
-            $allneeds =collect();
-            foreach($allnews as $new){
-            $anews= array('title' =>$new->title ,'time'=>$new->time, 'id'=>$new->n_id);
-            $allneeds->push($anews);
-            }
-	    	return $this->stdResponse('1',$allneeds);
-		}
+	 	$news = News::where('state',3)->orderBy('n_id','desc')
+             ->select(['title','time','n_id as id','picture'])
+             ->paginate($request->rows);
+
+         if(!($request->page >=1 && $request->page <= $news->lastPage()))
+             return $this->stdResponse('1','{}');
+         else{
+             return $this->stdResponse('1',$news);
+         }
  
 	 }
 	 
@@ -88,18 +101,24 @@ class NewsController extends Controller
      	/* administor api_token checked*/
      	if(!$this->check_token($request->input('api_token'))){
      		return $this->stdResponse('-3');
-     	} 	 	
-     	
-	 	/* request needs to include $page & $rows */
-	 	$allnews=News::orderBy('n_id','desc')
-	 				->paginate($request->rows);;
-	 	$allneeds = collect();
-	    foreach($allnews as $new){
-	          $anews= array('title' =>$new->title ,'time'=>$new->time, 'id'=>$new->n_id, 'writer'=>$new->writer,'state'=>$new->state);
-	          $allneeds->push($anews);      	
-	    }
-	    return $this->stdResponse('1',$allneeds);
-	 
+     	}
+
+         /*用户需要有管理新闻的权限 */
+         if($this->user_news != 1 ){
+             return $this->stdResponse('-6');
+         }
+
+         /* request needs to include $page & $rows */
+         $news = News::orderBy('n_id','desc')
+             ->select(['title','time','n_id as id','state','writer','picture'])
+             ->paginate($request->rows);
+
+         if(!($request->page >=1 && $request->page <= $news->lastPage()))
+             return $this->stdResponse('1','{}');
+         else{
+             return $this->stdResponse('1',$news);
+         }
+
 	 }
 	 
 	 
@@ -108,41 +127,62 @@ class NewsController extends Controller
      	if(!$this->check_token($request->input('api_token'))){
      		return $this->stdResponse('-3');
      	}
+
+         /*用户需要有管理新闻的权限 */
+         if($this->user_news != 1 ){
+             return $this->stdResponse('-6');
+         }
      	
-     	$res=$this->filter($request,[
-     		'state'=>'required|digits:1|filled']);
+     	$res = $this->filter($request,[
+     		'state'=>'required|max:2|filled']);
      	if(!$res){
      		return $this->stdResponse('-1');
      	}
      	try{
-            $item=News::find($id);
+            $item = News::find($id);
+            if(count($item) == 0){
+                return $this->stdResponse('-5');
+            }
             $item->state=$request->input('state');
-            $item->save();
-        }catch (\Exception $exception){
-            return $this->stdResponse('-4');
-        }
-         return $this->stdResponse('1');
+            $res = $item->save();
 
+            return $res ? $this->stdResponse('1') : $this->stdResponse('-14');
+        }catch (\Exception $exception){
+            return $this->stdResponse('-12');
+        }
      }
 	 
-	 public function deNews(Request $request,$id){
+	 public function delNews(Request $request,$id){
     	/* administor api_token checked*/
      	if(!$this->check_token($request->input('api_token'))){
      		return $this->stdResponse('-3');
      	}
 
+         /*用户需要有管理新闻的权限 */
+         if($this->user_news != 1 ){
+             return $this->stdResponse('-6');
+         }
+
         /*删除新闻*/
         try{
-            $item=News::find($id);
+            $item = News::find($id);
+            if(count($item) == 0){
+                return $this->stdResponse('-5');
+            }
+
+            $path = $item->article;
+            $res01 = Storage::disk('pic')->delete($path);
 
             /*$path = $item->picture;
             Storage::disk('pic')->delete($path);*/
 
-            $item->delete();
+            $res02 = $item->delete();
+
+            return ($res01 && $res02)? $this->stdResponse('1') : $this->stdResponse('-4');
+
         }catch(\Exception $e){
-            return $this->stdResponse('-2');
+            return $this->stdResponse('-12');
         }
-     	return $this->stdResponse('1');
 	 }
 
 
@@ -152,10 +192,10 @@ class NewsController extends Controller
          $filter=$this->filter($request,[
              'title'=>'required|max:255',
              'time'=>'required|date_format:Y-m-d',
-             'article'=>'required',
-             'writer'=>'required',
-         //    'picture'=>'required',
-             'api_token'=>'required',
+             'article'=>'required|filled',
+             'writer'=>'required|filled',
+   //          'picture'=>'required|filled',
+             'api_token'=>'required|filled',
          ]);
          if(!$filter)
              return $this->stdResponse('-1');
@@ -163,48 +203,82 @@ class NewsController extends Controller
          if(!$this->check_token($request->input('api_token'))){
              return $this->stdResponse('-3');
          }
-         try{
-             $new=News::find($id);
 
-             $new->title = $request->title;
-
-             Storage::disk('pic')->put($new->article, $request->article);
-             $new->writer = $request->writer;
-
-             $new->save();
-         }catch (\Exception $e){
-             return $this->stdResponse('-4');
+         /*用户需要有管理新闻的权限 */
+         if($this->user_news != 1 ){
+             return $this->stdResponse('-6');
          }
-         return $this->stdResponse('1');
-     }
+         try{
+             $new = News::find($id);
 
+             $new->title = $request->input('title');
+             $new->writer = $request->input('writer');
+             $new->time = $request->input('time');
+             $new->picture = $request->picture ? $request->picture : "";
+
+             $res01 = Storage::disk('pic')->put($new->article, $request->article);
+
+             $res02 = $new->save();
+
+             return ($res01 && $res02)? $this->stdResponse('1') : $this->stdResponse('-4');
+
+         }catch (\Exception $e){
+             return $this->stdResponse('-12');
+         }
+     }
 
 	 //上传图片
 	 public function uploadImg(Request $request){
-    	/* administor api_token checked*/
-     	if(!$this->check_token($request->input('api_token'))){
-     		return $this->stdResponse('-3');
-     	}
-     	$Img=$request->file('newspic');
+    	 /* administor api_token checked*/
+     	 if(!$this->check_token($request->input('api_token'))){
+     		 return $this->stdResponse('-3');
+         }
+         /*用户需要有管理新闻的权限 */
+         if($this->user_news != 1 ){
+             return $this->stdResponse('-6');
+         }
+
+         $filter=$this->filter($request,[
+            // 'newspicture' => 'dimensions:min_width=100,min_height=200',
+             'api_token'=>'required|filled',
+         ]);
+         if(!$filter)
+             return $this->stdResponse('-1');
+
+     	$Img = $request->file('newspicture');
 
         /*get file config*/
-	    $originalName = $Img->getClientOriginalName();
         $ext = $Img->getClientOriginalExtension();
         $realPath = $Img->getRealPath();
-        $type = $Img->getClientMimeType();
 
         /*upload img*/
-        $filename = date('Y-m-d-H-i-s') . '-' .$originalName . '.' . $ext;
+        $filename = uniqid(). '.' . $ext;
 
-        /*use disk pic */
-        $bool = Storage::disk('pic')->put($filename, file_get_contents($realPath));
+        try{
+            /*use disk pic */
+            $bool = Storage::disk('pic')->put($filename, file_get_contents($realPath));
 
-     	return $this->stdResponse('1',$filename);
+            return $bool? $this->stdResponse('1',$filename) : $this->stdResponse('-12');
+
+        }catch (\Error $error){
+            return $this->stdResponse('-12');
+        }
+
 	 }
+
+     /*显示 图片*/
+     public function getImg($path){
+        return Storage::disk('pic')->get($path);
+     }
+
+
+
+
+
 
 	 /*给新闻添加图片*/
      public function addNewsPic(Request $request){
-         $filter=$this->filter($request,[
+         $filter = $this->filter($request,[
              'n_id'=>'required',
              'picture'=>'required|filled',
              'api_token'=>'required',
@@ -214,6 +288,11 @@ class NewsController extends Controller
 
          if(!$this->check_token($request->input('api_token'))){
              return $this->stdResponse('-3');
+         }
+
+         /*用户需要有管理新闻的权限 */
+         if($this->user_news != 1 ){
+             return $this->stdResponse('-6');
          }
          /*
           *
@@ -225,23 +304,21 @@ class NewsController extends Controller
      }
 
 	 /*根据picture的id删除图片*/
-     public function deImg(Request $request,$id){
-    	/* administor api_token checked*/
-     	if(!$this->check_token($request->input('api_token'))){
+     public function delImg(Request $request,$id){
+    	 /* administor api_token checked*/
+     	 if(!$this->check_token($request->input('api_token'))){
      		return $this->stdResponse('-3');
-     	}
+     	 }
      	
-     	$item=Picture::find($id);
+     	 $item = Picture::find($id);
      	
-     	$path=$item->path;
-     	Storage::disk('pic')->delete($path);
+     	 $path = $item->path;
+     	 $res01 = Storage::disk('pic')->delete($path);
      	
-     	$item->delete();
-     	return $this->stdResponse('1');
-     	
+     	 $res02 = $item->delete();
+     	 return ($res01 && $res02)? $this->stdResponse('1') : $this->stdResponse('-14');
+
      }
 
-     public function getImg($path){
-     	return Storage::disk('pic')->get($path);
-     }
+
 }
