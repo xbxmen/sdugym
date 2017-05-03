@@ -31,7 +31,11 @@ class Controller extends BaseController
         -11=> '没有更多内容',
         -12=> '服务器错误',
         -13=> '申请流程已经进入下一个流程，您没有权限进行该操作~',
-        -14=> '请不要重复提交'
+        -14=> '请不要重复提交',
+        -15 => '两次密码不一致',
+        -16 => '请等待上一级申请流程~',
+        -17 => '申请流程已经截止了，请联系上一级管理员',
+        -18 => '原密码不正确。'
     ];
 
     public $filterFail = false;
@@ -54,6 +58,8 @@ class Controller extends BaseController
     public $user_equipment = "";
     public $user_news = "";
 
+    public $user_password = "";
+
     public function stdResponse($code='',$result='')
     {
         $hashCode = ($code || $code === 1);
@@ -74,35 +80,55 @@ class Controller extends BaseController
         }
         return true;
     }
+
+    /*public function setPassword($password){
+        $this->user_password = $password;
+    }
+
+    public function getPassword(){
+        return $this->user_password;
+    }*/
+
     //验证 user 权限
     public function check_token($api_token)
     {
-        $res = DB::table('users')
-            ->where('api_token','=',$api_token)
-            ->where('token_expire','>',date('Y-m-d H:i:s'))
-            ->leftJoin('power','users.u_id','=','power.u_id')->first();
+        try{
+            $res = DB::table('users')
+                ->where('api_token','=',$api_token)
+                ->where('token_expire','>',date('Y-m-d H:i:s'))
+                ->leftJoin('power','users.u_id','=','power.u_id')->first();
 
-        if(count($res) > 0){
-            $this->api_token = $api_token;
-            $this->user_campus = $res->campus;
-            $this->user_schoolnum = $res->schoolnum;
-            $this->user_id = $res->u_id;
+            if(count($res) > 0){
+                $this->api_token = $api_token;
+                $this->user_campus = $res->campus;
+                $this->user_schoolnum = $res->schoolnum;
+                $this->user_id = $res->u_id;
 
-            /*用户权限*/
-            $this->user_mu = $res->mu;
-            $this->user_zx = $res->zx;
-            $this->user_hj = $res->hj;
-            $this->user_xl = $res->xl;
-            $this->user_bt = $res->bt;
-            $this->user_qf = $res->qf;
-            $this->user_rj = $res->rj;
-            $this->user_finance = $res->finance;
-            $this->user_equipment = $res->equipment;
-            $this->user_news = $res->news;
-            return true;
+                /*用户权限*/
+                $this->user_mu = $res->mu;
+                $this->user_zx = $res->zx;
+                $this->user_hj = $res->hj;
+                $this->user_xl = $res->xl;
+                $this->user_bt = $res->bt;
+                $this->user_qf = $res->qf;
+                $this->user_rj = $res->rj;
+                $this->user_finance = $res->finance;
+                $this->user_equipment = $res->equipment;
+                $this->user_news = $res->news;
+                $this->user_password = $res->password;
+           //     $this->setPassword($res->password);
+
+                return true;
+            }
+
+        }catch (\Error $error){
+            return false;
+        }catch (\Exception $exception){
+            return false;
         }
-        return false;
+
     }
+
     /*删除 token*/
     /**
      * @return string

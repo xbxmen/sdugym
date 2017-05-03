@@ -150,12 +150,16 @@ class ApplicationController extends Controller
                  return $this->stdResponse('-6',"您没有该校区的管理权限~~");
              }
 
+             /*判断 申请 在哪一个流程*/
              if($power < abs($item->state)){
                  return $this->stdResponse('-13');
              }
 
+             if($item->state < 0  && $power > abs($item->state)){
+                return $this->stdResponse("-17");
+             }
              if($power - abs($item->state) > 1){
-                 return $this->stdResponse('-14');
+                 return $this->stdResponse('-16');
              }
 
              $item->state = $request->input('state') > 0 ? $power : 0 - $power;
@@ -187,7 +191,7 @@ class ApplicationController extends Controller
 
              DB::commit();
 
-             return $res ? $this->stdResponse('1') : $this->stdResponse('-14');
+             return $res ? $this->stdResponse('1',"成功修改~") : $this->stdResponse('-14');
          } catch (\Error $error){
              return $this->stdResponse('-12');
          } catch (\Exception $exception){

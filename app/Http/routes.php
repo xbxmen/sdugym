@@ -45,6 +45,8 @@ Route::group(['prefix' => '/api/users'],function (){
     Route::get('/i/info','UserController@info'); /*返回用户个人信息*/
     ///:userid/info
     Route::put('/i/info','UserController@setinfo');/*修改个人信息*/
+
+    Route::put('/i/pass','UserController@setPassword');/*修改个人密码*/
     //put
     Route::get('/info','UserController@allinfo');/*获取当前用户权限下面所有用户的信息*/
     ////get  /users/i/users
@@ -53,7 +55,7 @@ Route::group(['prefix' => '/api/users'],function (){
     Route::get('/i/gp','UserController@getPower');/* h*/
     // post users/
     /*内务管理员*/
- //   Route::post('/addfin','UserController@addFin');/*root 创建财务管理员*/
+ //Route::post('/addfin','UserController@addFin');/*root 创建财务管理员*/
     Route::put('/i/people/{schoolnum}/auth','UserController@changePower');/*root 为财务管理员添加权限或删除权限*/
 });
 
@@ -97,7 +99,7 @@ Route::group(['prefix'=>'/api/messages'],function(){
 Route::group(['prefix'=>'/api/equipments'],function(){
 	Route::post('/','EquipmentController@postRegistry');
 	Route::get('/campus/{campus}','EquipmentController@getRegistry');
-	Route::delete('/id/{id}','EquipmentController@deRegistry');
+	Route::delete('/id/{id}','EquipmentController@delRegistry');
     Route::put('/id/{id}','EquipmentController@putRegistry');
 
     Route::get('/name/{name}','EquipmentController@getRegistryByName');
@@ -106,7 +108,7 @@ Route::group(['prefix'=>'/api/equipments'],function(){
 Route::group(['prefix'=>'/api/equipments/adjust'],function(){
 	Route::post('/','EquipmentController@postAdjust');
 	Route::get('/campus/{campus}','EquipmentController@getAdjust');
-	Route::delete('/id/{id}','EquipmentController@deAdjust');
+	Route::delete('/id/{id}','EquipmentController@delAdjust');
 
 });
 

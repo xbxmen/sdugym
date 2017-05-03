@@ -65,7 +65,7 @@ class ScheduleController extends Controller
             ->where('gym',$gym)
             ->update($request->except('api_token'));
         if($res == 0){
-            return $this->stdresponse("-9");
+            return $this->stdresponse("-14");
         }
         return $this->stdresponse("1");
     }

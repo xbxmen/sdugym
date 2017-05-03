@@ -98,21 +98,6 @@ class EquipmentController extends Controller{
 		return $this->stdResponse('1',$eqpmts);
 	
 	}
-      /* adminitor delete apply form*/
-     public function deRegistry(Request $request,$id){
-     	/* administor api_token checked*/
-     	if(!$this->check_token($request->input('api_token'))){
-     		return $this->stdResponse('-3');
-     	}
-         if($this->user_equipment != 1){
-             return $this->stdResponse('-6');
-         }
-
-         $item=Equipment::find($id);
-     	 $item->delete();
-     	
-     	return $this->stdResponse('1');
-     }
 
     /*获取某个校区的器材*/
     public function getRegistryByName(Request $request,$name){
@@ -125,12 +110,20 @@ class EquipmentController extends Controller{
             return $this->stdResponse('-6');
         }
 
-        $res = Equipment::where('equipment_name',$name)->get();
-        return $this->stdResponse('1',$res);
+        try{
+            $res = Equipment::where('equipment_name','like','%'.$name.'%')->get();
 
+            if(count($res) == 0){
+                return $this->stdResponse('-5');
+            }
+            return $this->stdResponse('1',$res);
+
+        }catch (\Exception $exception){
+            return $this->stdResponse('-12');
+        }
     }
     /* adminitor delete apply form*/
-    public function deRegistry(Request $request,$id){
+    public function delRegistry(Request $request,$id){
         /* administor api_token checked*/
         if(!$this->check_token($request->input('api_token'))){
             return $this->stdResponse('-3');
@@ -205,13 +198,21 @@ class EquipmentController extends Controller{
      	if(!$this->check_token($request->input('api_token'))){
      		return $this->stdResponse('-3');
      	}
-     	$eqpmts=Equipmentadjust::where('belong_campus',$campus)->get();		
-		return $this->stdResponse('1',$eqpmts);
-	
+     	try{
+            $res = Equipmentadjust::where('belong_campus',$campus)->get();
+
+            if(count($res)){
+                return $this->stdResponse('-5');
+            }
+            return $this->stdResponse('1',$res);
+
+        }catch (\Exception $exception){
+            return $this->stdResponse('-12');
+        }
 	}
     
     /* adminitor delete apply form*/
-    public function deAdjust(Request $request,$id){
+    public function delAdjust(Request $request,$id){
      	/* administor api_token checked*/
      	if(!$this->check_token($request->input('api_token'))){
      		return $this->stdResponse('-3');

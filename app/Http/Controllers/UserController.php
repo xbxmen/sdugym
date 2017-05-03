@@ -34,7 +34,7 @@ class UserController extends Controller
     {
         $res = $this->filter($request,[
             'schoolnum'=>'required|unique:users|numeric|digits:12|filled',
-            'password'=>'required|digitsbetween:6,60|filled',
+            'password'=>'required|digits_between:6,20|filled',
             'campus'=>'required|filled',
             'realname'=>'required|filled',
             'api_token'=>'required|filled'
@@ -58,20 +58,68 @@ class UserController extends Controller
                 $user->password = md5($request->input('password')."#".$request->input('schoolnum'));
                 $user->campus = $request->input('campus');
                 $user->realname = $request->input('realname');
-                $user->save();
+                $res01 = $user->save();
 
                 $power = new Power();
                 $power->u_id = $user->u_id;
-                $power->save();
+                $res02 = $power->save();
 
-                DB::commit();
-                return $this->stdResponse(1);
+                if($res02 && $res01){
+                    DB::commit();
+                    return $this->stdResponse(1);
+                }else{
+                    DB::rollback();
+                    return $this->stdResponse("-4");
+                }
+
             }catch (\Exception $exception){
                 DB::rollback();
                 return $this->stdResponse("-4");
+            }catch (\Error $error){
+                return $this->stdResponse("-12");
             }
         }
         return $this->stdResponse("-6");
+    }
+
+    //修改个人密码
+    public function setPassword(Request $request){
+        //check form data
+        $res = $this->filter($request,[
+            'old_password'=>'required|filled',
+            'new_password'=>'required|filled',
+            'new_password_re'=>'required|filled'
+        ]);
+        if(!$res)
+        {
+            return $this->stdResponse();
+        }
+        if($request->input('new_password') != $request->input('new_password_re')){
+            return $this->stdResponse('-15');
+        }
+
+        //验证用户 token
+        if(!$this->check_token($request->input('api_token')))
+        {
+            return $this->stdResponse("-3");
+        }
+
+        if($this->user_password != md5($request->input('old_password')."#".$this->user_schoolnum)){
+            return $this->stdResponse("-18");
+        }
+
+        try{
+
+            $password = md5($request->input('new_password')."#".$this->user_schoolnum);
+
+            $res = User::where('u_id',$this->user_id)
+                ->update(['password'=>$password]);
+            return $res ? $this->stdResponse("1") : $this->stdResponse("-14");
+        }catch (\Exception $exception){
+            return $this->stdResponse("-12");
+        }catch (\Error $error){
+            return $this->stdResponse("-12");
+        }
     }
 
     //登录接口
@@ -80,8 +128,8 @@ class UserController extends Controller
 
         //check form data
         $res = $this->filter($request,[
-            'schoolnum'=>'required',
-            'password'=>'required',
+            'schoolnum'=>'required|filled',
+            'password'=>'required|filled',
         ]);
         if(!$res)
         {
@@ -89,20 +137,27 @@ class UserController extends Controller
         }
 
         //check schoolnum and password
-        $user = User::where('password',md5($request->input('password')."#".$request->input('schoolnum')))
-            ->where('schoolnum',$request->input('schoolnum'))->first();
-        if(!count($user) > 0)
-        {
-            return $this->stdResponse('-7');
+        try{
+            $user = User::where('password',md5($request->input('password')."#".$request->input('schoolnum')))
+                ->where('schoolnum',$request->input('schoolnum'))->first();
+            if(!count($user) > 0)
+            {
+                return $this->stdResponse('-7');
+            }
+            //success
+            if($user->token_expire < date('Y-m-d H:i:s'))
+            {
+                $user->api_token = Crypt::encrypt($user->u_id."&".time());
+                $user->token_expire = date('Y-m-d H:i:s',strtotime("+24 hour"));
+                $user->save();
+            }
+            return $this->stdResponse('1',$user->api_token);
+
+        }catch (\Exception $exception){
+            return $this->stdResponse('-12');
+        }catch (\Error $error){
+            return $this->stdResponse('-12');
         }
-        //success
-        if($user->token_expire < date('Y-m-d H:i:s'))
-        {
-            $user->api_token = Crypt::encrypt($user->u_id."&".time());
-            $user->token_expire = date('Y-m-d H:i:s',strtotime("+24 hour"));
-            $user->save();
-        }
-        return $this->stdResponse('1',$user->api_token);
     }
 
     //用户个人资料
