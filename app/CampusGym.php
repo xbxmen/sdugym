@@ -9,13 +9,15 @@ namespace App;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Equipment extends Model
+class CampusGym extends Model
 {
-    protected $table = "equipments";
+    protected $table = "campus_gym";
 
     protected $primaryKey = "id";
 
-    protected $fillable = ['campus','type','gym','equipment_name','buy_date','buy_number','in_number','no_number','out_number','unit','price','total_price','remark','created_at','updated_at','u_id'];
+    public $timestamps = false;
+
+    protected $fillable = ['campus','campus_chinese','gym','gym_chinese','type','number','use_area','build_area','material','build_year','design_year'];
 
     /**
      * The attributes excluded from the model's JSON form.

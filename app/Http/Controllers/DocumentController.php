@@ -43,7 +43,11 @@ class DocumentController extends Controller{
      	/* administor api_token checked*/
      	if(!$this->check_token($request->input('api_token'))){
      		return $this->stdResponse('-3');
-     	} 	 
+     	}
+
+        if($this->user_document != 1){
+            return $this->stdResponse('-6');
+        }
 
     	$doc=$request->file('document');
         /*get file config*/
@@ -75,21 +79,43 @@ class DocumentController extends Controller{
      	/* administor api_token checked*/
      	if(!$this->check_token($request->input('api_token'))){
      		return $this->stdResponse('-3');
-     	} 	 
-	    $doc=Document::find($id);
-	    $docname=$doc->path;
-	    $bool=Storage::disk('doc')->delete($docname);
-	    if($bool) $doc->delete();
-	    
-	    return $this->stdResponse('1');
-	
+     	}
+        if($this->user_document != 1){
+            return $this->stdResponse('-6');
+        }
+        try{
+            $doc=Document::find($id);
+            $docname=$doc->path;
+            $bool = Storage::disk('doc')->delete($docname);
+            if($bool){
+                $doc->delete();
+                return $this->stdResponse('1');
+            }
+                
+            return $this->stdResponse('-12');
+
+        }catch (\Exception $exception){
+            return $this->stdResponse('-4');
+        }catch (\Error $error){
+            return $this->stdResponse('-12');
+        }
 	}
 	
 	public function downDoc($id){
-   	    $doc=Document::find($id);
-	    $docname=$doc->path;
-	    $title=$doc->title;
-	    $pathToFile = storage_path('public/documents').'/'.$docname;
-	    return response()->download($pathToFile);
+
+	    try{
+            $doc = Document::find($id);
+            if(count($doc) == 0){
+                return $this->stdResponse('-5');
+            }
+
+            $name = $doc->path;
+            $pathToFile = storage_path('public/documents').'/'.$name;
+            return response()->download($pathToFile);
+        }catch (\Exception $exception){
+            return $this->stdResponse('-4');
+        }catch (\Error $error){
+            return $this->stdResponse('-12');
+        }
 	}
 }

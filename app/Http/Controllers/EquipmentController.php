@@ -12,19 +12,25 @@ use Illuminate\Http\Request;
 use App\Equipment;
 use App\User;
 use App\Equipmentadjust;
+use App\Http\Controllers\ExcelController;
 use Illuminate\Support\Facades\DB;
 class EquipmentController extends Controller{
-/************************* Equipment manage  prefix /api/equipments***************************/
+    /************************* Equipment manage  prefix /api/equipments**************************
+     * @param Request $request
+     * @return
+     */
 
-	public function postRegistry(Request $request){	
+	public function postRegistry(Request $request){
 
-    	$res=$this->filter($request,[
+    	$res = $this->filter($request,[
             'campus'=>'required|filled',
+            'campus_chinese'=>'required|filled',
+            'type'=>'required|filled',
             'gym'=>'required|filled',
             'equipment_name'=>'required|filled',
             'buy_date'=>'required|filled|date_format:"Y-m-d',
-            'buy_number'=>'required|filled|integer',
-            'price'=>'required|filled|integer',
+            'buy_number'=>'required|filled',
+            'price'=>'required|filled',
             'remark'=>'required|filled|string|max:255'
     	]);
 
@@ -33,7 +39,7 @@ class EquipmentController extends Controller{
             return $this->stdResponse('-3');
         }
 
-        if($this->user_equipment != 1){
+        if($this->user_equipment != 2){
             return $this->stdResponse('-6');
         }
 
@@ -41,11 +47,12 @@ class EquipmentController extends Controller{
     		return $this->stdResponse('-1');
     	}
         $arr = $request->except('api_token');
-    	$arr->u_id = $this->user_id;
+    	$arr['u_id'] = $this->user_id;
 
+        $res = Equipment::create($arr);
+        return $res? $this->stdResponse('1') : $this->stdResponse('-4');
     	try{
-            $eqp = Equipment::insert($arr);
-            return $this->stdResponse('1');
+
         }catch (\Exception $exception){
             return $this->stdResponse('-4');
         }
@@ -57,7 +64,7 @@ class EquipmentController extends Controller{
             return $this->stdResponse('-3');
         }
 
-        if($this->user_equipment != 1){
+        if($this->user_equipment != 2){
             return $this->stdResponse('-6');
         }
 
@@ -90,12 +97,12 @@ class EquipmentController extends Controller{
      		return $this->stdResponse('-3');
      	}
 
-        if($this->user_equipment != 1){
+        if($this->user_equipment == 0){
             return $this->stdResponse('-6');
         }
 
-        $eqpmts=Equipment::where('campus',$campus)->get();
-		return $this->stdResponse('1',$eqpmts);
+        $res = Equipment::where('campus',$campus)->get();
+		return $this->stdResponse('1',$res);
 	
 	}
 
@@ -106,7 +113,7 @@ class EquipmentController extends Controller{
             return $this->stdResponse('-3');
         }
 
-        if($this->user_equipment != 1){
+        if($this->user_equipment == 0){
             return $this->stdResponse('-6');
         }
 
@@ -128,7 +135,7 @@ class EquipmentController extends Controller{
         if(!$this->check_token($request->input('api_token'))){
             return $this->stdResponse('-3');
         }
-        if($this->user_equipment != 1){
+        if($this->user_equipment != 2){
             return $this->stdResponse('-6');
         }
 
@@ -147,6 +154,47 @@ class EquipmentController extends Controller{
         }
     }
 
+    public function exportEquipment(Request $request){
+        try{
+            $res = $this->filter($request,[
+                'start'=>'required|filled|date_format:"Y-m-d"',
+                'end'=>'required|filled|date_format:"Y-m-d"',
+                'campus'=>'required|filled',
+            ]);
+            if(!$res)
+            {
+                return $this->stdResponse();
+            }
+
+            /* administor api_token checked*/
+            if(!$this->check_token($request->input('api_token'))){
+                return $this->stdResponse('-3');
+            }
+            if($this->user_equipment != 2){
+                return $this->stdResponse('-6');
+            }
+            $item = Equipment::select(['campus_chinese as 校区','gym as 场馆','equipment_name as 器材名字','buy_date as 购买时间'
+                ,'buy_number as 购买数量','in_number as 在用数量','no_number as 报废数量','out_number as 调出数量',
+                'unit as 单位','price as 价格','total_price as 总价格','remark as 备注'])
+                ->where('campus_chinese',$request->input('campus'))
+                ->where('buy_date','>=',$request->input('start'))
+                ->where('buy_date','<=',$request->input('end'))
+                ->get();
+
+            if(count($item) == 0){
+                return $this->stdResponse('-5');
+            }
+
+            $item->prepend(['校区','场馆','器材名字','购买时间','购买数量','在用数量','报废数量','调出数量','单位','价格','总价格','备注']);
+
+            $this->export($item->toArray(),$request->input('start').'到'.$request->input('end').'器材导出信息');
+
+        }catch (\Exception $exception){
+            return $this->stdResponse('-12');
+        }catch (\Error $error){
+            return $this->stdResponse('-12');
+        }
+    }
 
  /************************* Equipment adjust  ,prefix /api/equipments/adjust ***************************/	
    	public function postAdjust(Request $request){
@@ -168,6 +216,10 @@ class EquipmentController extends Controller{
 
         if(!$this->check_token($request->input('api_token'))){
             return $this->stdResponse('-3');
+        }
+
+        if($this->user_equipment != 2){
+            return $this->stdResponse('-6');
         }
 
      	$arr = $request->except('api_token')->except('id');
@@ -198,6 +250,10 @@ class EquipmentController extends Controller{
      	if(!$this->check_token($request->input('api_token'))){
      		return $this->stdResponse('-3');
      	}
+        if($this->user_equipment != 2){
+            return $this->stdResponse('-6');
+        }
+
      	try{
             $res = Equipmentadjust::where('belong_campus',$campus)->get();
 
@@ -217,11 +273,25 @@ class EquipmentController extends Controller{
      	if(!$this->check_token($request->input('api_token'))){
      		return $this->stdResponse('-3');
      	}
-     	
-     	$item=Equipmentadjust::find($id);
-     	$item->delete();
-     	
-     	return $this->stdResponse('1');
+
+        if($this->user_equipment != 2){
+            return $this->stdResponse('-6');
+        }
+
+        try{
+            $item = Equipmentadjust::find($id);
+            if(count($item) == 0){
+                return $this->stdResponse('-5');
+            }
+
+            $res = $item->delete();
+
+            return $res ? $this->stdResponse('1') : $this->stdResponse('-4');
+        }catch (\Exception $exception){
+            return $this->stdResponse('-4');
+        }catch (\Error $error){
+            return $this->stdResponse('-12');
+        }
      }
 
 }

@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers;
 
-
+use Excel;
 use App\User;
+use App\CampusGym;
 use Validator;
 use Illuminate\Foundation\Bus\DispatchesJobs;
 use Illuminate\Http\Request;
@@ -35,14 +36,15 @@ class Controller extends BaseController
         -15 => '两次密码不一致',
         -16 => '请等待上一级申请流程~',
         -17 => '申请流程已经截止了，请联系上一级管理员',
-        -18 => '原密码不正确。'
+        -18 => '原密码不正确',
+        -19 => '请等待其他财务管理员审核',
+        -20 => '场馆安排中已经存在相同的记录,仔细检查,请不要重复添加',
+        -21 => '场馆数量不正确'
     ];
 
     public $filterFail = false;
     public $backMeg;
     public $api_token =  "";
-   /* public $user_grade = "";
-    public $user_permission = "";*/
     public $user_campus = "";
     public $user_schoolnum = "";
     public $user_id = "";
@@ -57,6 +59,7 @@ class Controller extends BaseController
     public $user_finance = "";
     public $user_equipment = "";
     public $user_news = "";
+    public $user_document = "";
 
     public $user_password = "";
 
@@ -116,6 +119,7 @@ class Controller extends BaseController
                 $this->user_equipment = $res->equipment;
                 $this->user_news = $res->news;
                 $this->user_password = $res->password;
+                $this->user_document = $res->document;
            //     $this->setPassword($res->password);
 
                 return true;
@@ -142,6 +146,30 @@ class Controller extends BaseController
             return $res;
         }
         return false;
+    }
+
+    //选择ID
+    public function selectID($campus,$type,$gym){
+        try{
+            $res = CampusGym::where('campus',$campus)
+                ->where('type',$type)
+                ->where('gym',$gym)
+                ->get();
+            return $res;
+        }catch (\Exception $exception){
+            return $this->stdResponse('-12');
+        }catch (\Error $error){
+            return $this->stdResponse('-4');
+        }
+    }
+
+    //Excel文件导出功能 By Laravel学院
+    public function export($cellData,$filename){
+        Excel::create($filename,function($excel) use ($cellData){
+            $excel->sheet('score', function($sheet) use ($cellData){
+                $sheet->rows(array_values($cellData));
+            });
+        })->export('xls');
     }
 
 }

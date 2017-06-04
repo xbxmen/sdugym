@@ -5,16 +5,6 @@
  * Date: 17-3-26
  * Time: 下午6:13
  */
-/*
- *       1 => 'OK',
-        -1 => '表单错误',
-        -2 => '身份信息错误',
-        -3 => 'api_token校验失败',
-        -4 => '数据库操作失败',
-        -5 => '记录不存在',
-        -6 => '权限不足'
- *
- * */
 
 namespace App\Http\Controllers;
 
@@ -34,9 +24,10 @@ class UserController extends Controller
     {
         $res = $this->filter($request,[
             'schoolnum'=>'required|unique:users|numeric|digits:12|filled',
-            'password'=>'required|digits_between:6,20|filled',
+            'password'=>'required|between:6,20|filled',
             'campus'=>'required|filled',
             'realname'=>'required|filled',
+            'tel'=>'required|filled|digits:11',
             'api_token'=>'required|filled'
         ]);
         if(!$res)
@@ -58,6 +49,7 @@ class UserController extends Controller
                 $user->password = md5($request->input('password')."#".$request->input('schoolnum'));
                 $user->campus = $request->input('campus');
                 $user->realname = $request->input('realname');
+                $user->tel = $request->input('tel');
                 $res01 = $user->save();
 
                 $power = new Power();
@@ -154,7 +146,7 @@ class UserController extends Controller
             return $this->stdResponse('1',$user->api_token);
 
         }catch (\Exception $exception){
-            return $this->stdResponse('-12');
+            return $this->stdResponse('-4');
         }catch (\Error $error){
             return $this->stdResponse('-12');
         }
@@ -280,7 +272,7 @@ class UserController extends Controller
     /*
      * root 用户为 财务管理员添加权限或删除权限  通过传递的id的不同
      * */
-    public function changePower(Request $request,$schoolnum)
+    public function changePower(Request $request)
     {
         $res = $this->filter($request,[
             'api_token'=>'required|filled'
@@ -305,7 +297,43 @@ class UserController extends Controller
             return $this->stdResponse("1");
         }catch (\Exception $exception){
             return $this->stdResponse("-4");
+        }catch(\Error $error){
+            return $this->stdResponse('-12');
         }
     }
 
+    public function forgetPass(Request $request){
+        $res = $this->filter($request,[
+            'api_token'=>'required|filled',
+            'u_id'=>'required|filled',
+        ]);
+        if(!$res)
+        {
+            return $this->stdResponse();
+        }
+        //验证用户 token
+        if(!$this->check_token($request->input('api_token')))
+        {
+            return $this->stdResponse(-3);
+        }
+        if($this->user_schoolnum != "root")
+        {
+            return $this->stdResponse("-6");
+        }
+
+        try{
+            $res = User::where('u_id',$request->input('u_id'))->first();
+
+            if(count($res) == 0){
+                return $this->stdResponse('-5');
+            }
+            $res->password = md5('123456'."#".$res->schoolnum);
+            $res = $res->save();
+            return $res? $this->stdResponse("1") : $this->stdResponse('-14');
+        }catch (\Exception $exception){
+            return $this->stdResponse("-4");
+        }catch(\Error $error){
+            return $this->stdResponse('-12');
+        }
+    }
 }

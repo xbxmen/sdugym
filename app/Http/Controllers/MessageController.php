@@ -43,7 +43,7 @@ class MessageController extends Controller
 	}
 	
 	/*Administor delete outside messages, param $id */
-	public function deMessage(Request $request,$id){
+	public function delMessage(Request $request,$id){
      	/* administor api_token checked*/
      	if(!$this->check_token($request->input('api_token'))){
      		return $this->stdResponse('-3');
@@ -51,8 +51,12 @@ class MessageController extends Controller
 
      	try{
             $item = Message::find($id);
+            if(count($item) == 0){
+                return $this->stdResponse('-5');
+            }
 
             $res = $item->delete();
+
             return $res? $this->stdResponse('1') : $this->stdResponse('-4');
         }catch (\Exception $exception){
             return $this->stdResponse('-12');
@@ -73,7 +77,8 @@ class MessageController extends Controller
         if(!($request->page >= 1))
             return $this->stdResponse('-1');
 
-		$allmess = Message::where('type',$type)
+		$allmess = Message::select(['title','content','created_at','id'])
+                ->where('type',$type)
                 ->where('state','1')
 				->orderBy('id','desc')
 				->paginate($request->rows);
@@ -125,9 +130,10 @@ class MessageController extends Controller
      	}
 
      	try{
-            $contact = Message::find($id)
-                        ->select(['name','tel','email']);
-            if(!$contact)
+            $contact = Message::where('id',$id)
+                        ->select(['name','tel','email'])->first();
+
+            if(count($contact) == 0)
                 return $this->stdResponse('-5');
 
             return $this->stdResponse('1',$contact);

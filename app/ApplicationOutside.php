@@ -8,7 +8,9 @@ class ApplicationOutside extends Model
 {
     protected $table = "applications_outside";
 
-    protected $fillable = ['campus','gym','department','content','time','classtime','charger','tel'];
+    protected $primaryKey = "id";
+
+    protected $fillable = ['campus','campus_chinese','campus_gym_id','money','gym','gym_number','department','content','state','remark','teacher_remark','time','classtime','charger','tel','created_at','updated_at'];
 
     /**
      * The attributes excluded from the model's JSON form.
@@ -16,5 +18,4 @@ class ApplicationOutside extends Model
      * @var array
      */
     protected $hidden = [];
-    public  $timestamps = false;
 }
