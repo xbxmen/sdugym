@@ -114,7 +114,7 @@ class ScheduleController extends Controller
     public function addData(Request $request,$campus,$gym){
         $res = $this->filter($request,[
             'start'=>'required|filled|date_format:"Y-m-d"',
-            'end'=>'required|filled|date_format:"Y-m-d"',
+        //    'end'=>'required|filled|date_format:"Y-m-d"',
             'type'=>'required|filled',
             'api_token'=>'required|filled'
         ]);
@@ -139,8 +139,8 @@ class ScheduleController extends Controller
         $ID = $res[0]->id;
         $number =  preg_replace('/([\x80-\xff]*)/i','',$res[0]->number);
         $schedule = Schedule::where('campus_gym_id',$ID)
-            ->where('date','>=',$request->input('start'))
-            ->where('date','<=',$request->input('end'))
+            ->where('date','=',$request->input('start'))
+         //   ->where('date','<=',$request->input('end'))
             ->orderBy('date','desc')
             ->get();
         if(count($schedule) > 0){

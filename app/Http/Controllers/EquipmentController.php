@@ -49,15 +49,16 @@ class EquipmentController extends Controller{
         $arr = $request->except('api_token');
     	$arr['u_id'] = $this->user_id;
 
-        $res = Equipment::create($arr);
-        return $res? $this->stdResponse('1') : $this->stdResponse('-4');
     	try{
+            $res = Equipment::create($arr);
+            return $res? $this->stdResponse('1') : $this->stdResponse('-4');
 
         }catch (\Exception $exception){
             return $this->stdResponse('-4');
         }
 	}
 
+	//修改 器材
 	public function putRegistry(Request $request,$id){
         /* administor api_token checked*/
         if(!$this->check_token($request->input('api_token'))){
@@ -69,11 +70,12 @@ class EquipmentController extends Controller{
         }
 
         $res = $this->filter($request,[
-            'buy_date'=>'required|filled|date_format:"Y-m-d',
+        //    'buy_date'=>'required|filled|date_format:"Y-m-d',
             'buy_number'=>'required|filled|integer',
             'in_number'=>'required|integer|filled',
             'no_number'=>'required|filled|integer',
             'price'=>'required|filled|integer',
+            'unit'=>'required|filled|string|max:255',
             'remark'=>'required|filled|string|max:255'
         ]);
 
@@ -106,7 +108,7 @@ class EquipmentController extends Controller{
 	
 	}
 
-    /*获取某个校区的器材*/
+    /*通过名称查询器材*/
     public function getRegistryByName(Request $request,$name){
         /* administor api_token checked*/
         if(!$this->check_token($request->input('api_token'))){
@@ -129,6 +131,7 @@ class EquipmentController extends Controller{
             return $this->stdResponse('-12');
         }
     }
+
     /* adminitor delete apply form*/
     public function delRegistry(Request $request,$id){
         /* administor api_token checked*/
@@ -176,7 +179,7 @@ class EquipmentController extends Controller{
             $item = Equipment::select(['campus_chinese as 校区','gym as 场馆','equipment_name as 器材名字','buy_date as 购买时间'
                 ,'buy_number as 购买数量','in_number as 在用数量','no_number as 报废数量','out_number as 调出数量',
                 'unit as 单位','price as 价格','total_price as 总价格','remark as 备注'])
-                ->where('campus_chinese',$request->input('campus'))
+                ->where('campus',$request->input('campus'))
                 ->where('buy_date','>=',$request->input('start'))
                 ->where('buy_date','<=',$request->input('end'))
                 ->get();
@@ -187,7 +190,7 @@ class EquipmentController extends Controller{
 
             $item->prepend(['校区','场馆','器材名字','购买时间','购买数量','在用数量','报废数量','调出数量','单位','价格','总价格','备注']);
 
-            $this->export($item->toArray(),$request->input('start').'到'.$request->input('end').'器材导出信息');
+            $this->export($item->toArray(),$request->input('start').' to '.$request->input('end').' Equipments Records');
 
         }catch (\Exception $exception){
             return $this->stdResponse('-12');

@@ -220,34 +220,32 @@ class FinanceController extends Controller{
         }
 
         //验证用户 token
-     /*   if(!$this->check_token($request->input('api_token')))
+        if(!$this->check_token($request->input('api_token')))
         {
             return $this->stdResponse('-3');
         }
 
-        if($this->user_finance == 0){
-            return $this->stdResponse('-6');
-        }*/
+        if($this->user_finance == '0'){
+            return $this->stdResponse('-6',$this->user_finance);
+        }
 
-        $finances = Finance::select(['finances.id','department','content','billing_time','money','users.realname as admin','remark','finances.campus as campus','finances.created_at as created_at'])
-            ->leftJoin("users","finances.u_id",'=',"users.u_id")
-            ->leftJoin("users as a","finances.del_admin",'=',"a.u_id")
-            ->where('finances.campus',$request->input('campus'))
-            ->where('billing_time','>=',$request->input('start'))
-            ->where('billing_time','<=',$request->input('end'))
-            ->where('finances.state','<>','-2')
-            ->orderBy('id','desc')
-            ->get();
-
-        $array = ["序号",'使用单位','内容','入账时间','费用','收费员','备注','校区','记录日期'];
-
-        $finances->prepend($array);
-        //return $this->stdResponse("1",$finances);
-
-
-        $this->export($finances->toArray(),$request->input('start')."到".$request->input('end').'财务导出信息');
         try{
+            $finances = Finance::select(['finances.id','department','content','billing_time','money','users.realname as admin','remark','finances.campus as campus','finances.created_at as created_at'])
+                ->leftJoin("users","finances.u_id",'=',"users.u_id")
+                ->leftJoin("users as a","finances.del_admin",'=',"a.u_id")
+                ->where('finances.campus',$request->input('campus'))
+                ->where('billing_time','>=',$request->input('start'))
+                ->where('billing_time','<=',$request->input('end'))
+                ->orderBy('id','desc')
+                ->get();
+            foreach ($finances as $row){
+                $row['campus'] = $this->getCampus($row['campus']);
+            }
 
+            $array = ["序号",'使用单位','内容','入账时间','费用','收费员','备注','校区','记录日期'];
+
+            $finances->prepend($array);
+            $this->export($finances->toArray(),$request->input('start')."to".$request->input('end').'Finances Records');
 
         }catch (\Exception $exception){
             return $this->stdResponse("-4");
@@ -255,4 +253,31 @@ class FinanceController extends Controller{
             return $this->stdResponse("-12");
         }
     }
+
+    public function getCampus($campus){
+        switch ($campus){
+            case 'zx':
+                return "中心校区";
+                break;
+            case 'qf':
+                return "千佛山校区";
+                break;
+            case 'bt':
+                return "趵突泉校区";
+                break;
+            case 'hj':
+                return "洪家楼校区";
+                break;
+            case 'rj':
+                return "软件园校区";
+                break;
+            case 'xl':
+                return "兴隆山校区";
+                break;
+            case 'mu':
+                return "综合体育馆";
+                break;
+        }
+    }
+
 }

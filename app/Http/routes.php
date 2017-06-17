@@ -73,6 +73,8 @@ Route::group(['prefix'=>'/api/apply'],function(){
     Route::delete('/{id}','ApplicationController@delApply');/*adminitor delete application form*/
     Route::get('/tel/{tel}','ApplicationController@getApplyByPhone');/*show application for adminitor */
 
+    Route::get('/export','ApplicationController@exportApply');/*export application for adminitor */
+
 });
 /* 场馆申请表格 训练班 申请 */
 Route::group(['prefix'=>'/api/apply/train'],function(){
@@ -82,6 +84,9 @@ Route::group(['prefix'=>'/api/apply/train'],function(){
 	Route::put('/{id}','ApplicationController@trainCheckApply');/*adminitor submit state of train-application-checked */
     Route::delete('/{id}','ApplicationController@trainDelApply');/*adminitor delete train-application-form*/
     Route::get('/tel/{tel}','ApplicationController@getTrainApplyByPhone');/*show application for adminitor */
+
+    Route::get('/export','ApplicationController@exportTrainApply');/*export application for adminitor */
+
 });
 /*留言板接口 */
 Route::group(['prefix'=>'/api/messages'],function(){
